@@ -36,22 +36,18 @@ class MainActivity : AppCompatActivity(), GameActions {
         refreshGameView()
     }
 
-    private fun onCardTapped(card: Card, source: String, column: Int) {
-        val bestMove = gameState.findBestMove(card)
+    private fun onCardTapped(card: Card, sourceSection: GameSection, column: Int) {
+        val bestMove = gameState.findBestMove(card, sourceSection)
 
         if (bestMove != null) {
-            // 1. Tell GameState to update the data
-            gameState.moveCard(card, source, column, bestMove)
+            gameState.moveCard(card, sourceSection, column, bestMove)
             refreshGameView()
         }
     }
 
 
     private fun refreshGameView() {
-        gameView.drawGameState(
-            gameState,
-            this::onCardTapped
-        )
+        gameView.drawGameState(gameState, this::onCardTapped)
     }
 
 

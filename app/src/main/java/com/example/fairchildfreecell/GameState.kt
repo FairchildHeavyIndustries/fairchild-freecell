@@ -1,19 +1,19 @@
 package com.example.fairchildfreecell
 // In GameState.kt, at the top of the file before the class definition
 
-enum class DestinationType {
-    TABLEAU, FOUNDATION, FREECELL
+enum class GameSection {
+    BOARD, FOUNDATION, FREECELL
 }
 
 data class MoveDestination(
-    val type: DestinationType,
+    val type: GameSection,
     val index: Int,
     val isEmpty: Boolean
 )
 
 
 class GameState(val gameNumber: Int) {
-    val tableauPiles = mutableMapOf<Int, MutableList<Card>>()
+    val boardPiles = mutableMapOf<Int, MutableList<Card>>()
     val foundationPiles = mutableMapOf<Int, MutableList<Card>>()
     val freeCellPiles = mutableMapOf<Int, Card?>()
 
@@ -33,7 +33,7 @@ class GameState(val gameNumber: Int) {
             freeCellPiles[i] = null
         }
         for (i in 1..8) {
-            tableauPiles[i] = mutableListOf()
+            boardPiles[i] = mutableListOf()
         }
     }
 
@@ -41,52 +41,46 @@ class GameState(val gameNumber: Int) {
         // Correct round-robin dealing for Freecell
         deck.forEachIndexed { i, card ->
             val pileNum = (i % 8) + 1
-            tableauPiles[pileNum]?.add(card)
+            boardPiles[pileNum]?.add(card)
         }
     }
 
-    fun findBestMove(card: Card): MoveDestination? {
+    fun findBestMove(card: Card, sourceSection: GameSection): MoveDestination? {
         // 1. Always prioritize moving to the foundation.
         findBestFoundationMove(card)?.let { return it }
 
         // 2. If no foundation move is found, find the best possible tableau and free cell moves.
-        val bestTableauMove = findBestTableauMove(card)
-        val bestFreeCellMove = findFirstEmptyFreecell()
+        val bestBoardMove = findBestBoardMove(card)
+        val firstFreecell = findFirstEmptyFreecell()
 
         // 3. Apply the priority rules to decide which move to return.
         return when {
             // If only one type of move is available, return it.
-            bestTableauMove != null && bestFreeCellMove == null -> bestTableauMove
-            bestTableauMove == null && bestFreeCellMove != null -> bestFreeCellMove
+            bestBoardMove != null && firstFreecell == null -> bestBoardMove
+            bestBoardMove == null && firstFreecell != null -> firstFreecell
 
             // If both are available, apply the special rules.
-            bestTableauMove != null && bestFreeCellMove != null -> {
-                if (card.rank == Rank.KING) {
-                    bestTableauMove // Kings prioritize moving to the tableau.
-                } else if (bestTableauMove.isEmpty) {
-                    bestFreeCellMove // Other cards prioritize moving to a free cell.
-                } else {
-                    bestTableauMove
-                }
+            bestBoardMove != null && firstFreecell != null -> {
+                if ((card.rank == Rank.KING) || (bestBoardMove.isEmpty && sourceSection == GameSection.FREECELL) || !bestBoardMove.isEmpty) {
+                    bestBoardMove
+                } else firstFreecell
             }
-
-            // If no moves are available, return null.
             else -> null
         }
     }
 
-    fun moveCard(card: Card, sourcePile: String, sourceNum: Int, destination: MoveDestination) {
+    fun moveCard(card: Card, sourceSection: GameSection, sourceNum: Int, destination: MoveDestination) {
 
-        when (sourcePile) {
-            "tableau" -> tableauPiles[sourceNum]?.remove(card)
-            "freecell" -> freeCellPiles[sourceNum] = null
+        when (sourceSection) {
+            GameSection.BOARD -> boardPiles[sourceNum]?.remove(card)
+            GameSection.FREECELL -> freeCellPiles[sourceNum] = null
+            else -> {}
         }
 
-
         when (destination.type) {
-            DestinationType.TABLEAU  -> tableauPiles[destination.index]?.add(card)
-            DestinationType.FOUNDATION -> foundationPiles[destination.index]?.add(card)
-            DestinationType.FREECELL -> freeCellPiles[destination.index] = card
+            GameSection.BOARD  -> boardPiles[destination.index]?.add(card)
+            GameSection.FOUNDATION -> foundationPiles[destination.index]?.add(card)
+            GameSection.FREECELL -> freeCellPiles[destination.index] = card
         }
     }
 
@@ -106,12 +100,12 @@ class GameState(val gameNumber: Int) {
 
         return targetPileNum?.let {
             val isEmpty = foundationPiles[it]?.isEmpty() ?: true
-            MoveDestination(DestinationType.FOUNDATION, it, isEmpty)
+            MoveDestination(GameSection.FOUNDATION, it, isEmpty)
         }
     }
 
-    private fun findBestTableauMove(card: Card): MoveDestination? {
-        val validDestinations = tableauPiles.filter { entry ->
+    private fun findBestBoardMove(card: Card): MoveDestination? {
+        val validDestinations = boardPiles.filter { entry ->
             val targetPile = entry.value
             if (targetPile.isEmpty()) {
                 true
@@ -128,7 +122,7 @@ class GameState(val gameNumber: Int) {
         }
 
         return bestDestinationEntry?.let {
-            MoveDestination(DestinationType.TABLEAU, it.key, it.value.isEmpty())
+            MoveDestination(GameSection.BOARD, it.key, it.value.isEmpty())
         }
     }
 
@@ -137,7 +131,7 @@ class GameState(val gameNumber: Int) {
     private fun findFirstEmptyFreecell(): MoveDestination? {
             val targetCellNum = freeCellPiles.entries.find { it.value == null }?.key
             return targetCellNum?.let {
-                MoveDestination(DestinationType.FREECELL, it, true)
+                MoveDestination(GameSection.FREECELL, it, true)
             }
 
 

@@ -8,6 +8,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.view.isNotEmpty
 
 
 import kotlin.math.roundToInt
@@ -23,7 +24,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     private var cardHeight = 0
 
     // A list of the actual resource IDs for our tableau columns
-    private val tableauColumnIds = listOf(
+    private val boardColumnIds = listOf(
         R.id.tableauColumn1, R.id.tableauColumn2, R.id.tableauColumn3, R.id.tableauColumn4,
         R.id.tableauColumn5, R.id.tableauColumn6, R.id.tableauColumn7, R.id.tableauColumn8
     )
@@ -35,10 +36,10 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     }
     fun drawGameState(
         gameState: GameState,
-        onCardClick: (Card, String, Int) -> Unit
+        onCardTap: (Card, GameSection, Int) -> Unit
     ) {
-        drawTopLayouts(gameState, cardWidth, cardHeight,  onCardClick)
-        drawTableau(gameState, cardWidth, cardHeight,  onCardClick)
+        drawTopLayouts(gameState, cardWidth, cardHeight,  onCardTap)
+        drawBoard(gameState, cardWidth, cardHeight,  onCardTap)
         drawGameNumber(gameState.gameNumber)
     }
 
@@ -68,7 +69,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         gameState: GameState,
         cardWidth: Int,
         cardHeight: Int,
-        onFreeCellCardClick: (Card, String, Int) -> Unit
+        onCardTap: (Card, GameSection, Int) -> Unit
     ) {
         freeCellLayout.removeAllViews()
         foundationLayout.removeAllViews()
@@ -82,7 +83,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
                 cardView.layoutParams = layoutParams
                 cardView.setOnClickListener {
-                    onFreeCellCardClick(card, "freecell", i)
+                    onCardTap(card, GameSection.FREECELL, i)
                 }
                 populateCardView(cardView, card)
                 freeCellLayout.addView(cardView)
@@ -139,30 +140,30 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     }
 
 
-    private fun drawTableau(
+    private fun drawBoard(
         gameState: GameState,
         cardWidth: Int,
         cardHeight: Int,
-        onCardClick: (Card, String, Int) -> Unit
+        onCardTap: (Card, GameSection, Int) -> Unit
     ) {
-        tableauColumnIds.forEachIndexed { index, columnId ->
+        boardColumnIds.forEachIndexed { index, columnId ->
             val pileNum = index + 1
-            val tableauColumn = activity.findViewById<LinearLayout>(columnId)
-            tableauColumn.removeAllViews()
+            val boardColumn = activity.findViewById<LinearLayout>(columnId)
+            boardColumn.removeAllViews()
 
-            val pile = gameState.tableauPiles[pileNum]
+            val pile = gameState.boardPiles[pileNum]
             if (pile != null && pile.isNotEmpty()) {
                 // Find the last card in the pile before the loop starts.
                 val lastCardInPile = pile.last()
 
                 for (card in pile) {
-                    val cardView = LayoutInflater.from(activity).inflate(R.layout.card_layout, tableauColumn, false)
+                    val cardView = LayoutInflater.from(activity).inflate(R.layout.card_layout, boardColumn, false)
 
                     val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
                     layoutParams.width = cardWidth
                     layoutParams.height = cardHeight
 
-                    if (tableauColumn.childCount > 0) {
+                    if (boardColumn.isNotEmpty()) {
                         val overlap = (cardHeight * 0.65).roundToInt()
                         layoutParams.topMargin = -overlap
                     }
@@ -172,11 +173,11 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     // Only the top card in the stack (the last one) gets a click listener.
                     if (card == lastCardInPile) {
                         cardView.setOnClickListener {
-                            onCardClick(card, "tableau", pileNum)
+                            onCardTap(card, GameSection.BOARD, pileNum)
                         }
                     }
 
-                    tableauColumn.addView(cardView)
+                    boardColumn.addView(cardView)
                 }
             }
         }
