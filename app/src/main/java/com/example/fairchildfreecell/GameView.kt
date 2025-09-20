@@ -45,15 +45,24 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     fun updateViewForMove( moveEvent: MoveEvent) {
         val cardView = cardViewMap[moveEvent.card] ?: return // Find the view for the moved card
 
-        // 1. Remove the view from its old parent
+
         val sourceParent = findParentLayout(moveEvent.source)
         sourceParent.removeView(cardView)
 
-        // 2. Add the view to its new parent
+
+        // This removes the negative top margin from the tableau stack.
+        val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
+        layoutParams.topMargin = 0 // Reset the margin
+        cardView.layoutParams = layoutParams
+
+
         val destParent = findParentLayout(moveEvent.destination)
         when (moveEvent.destination.section) {
             GameSection.BOARD -> {
-                // For board piles, adding to the end is correct.
+                if (destParent.isNotEmpty()) {
+                    val overlap = (cardHeight * 0.65).roundToInt()
+                    layoutParams.topMargin = -overlap
+                }
                 destParent.addView(cardView)
             }
             GameSection.FREECELL, GameSection.FOUNDATION -> {
