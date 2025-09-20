@@ -2,6 +2,8 @@ package com.example.fairchildfreecell
 
 import android.app.Activity
 import android.view.LayoutInflater
+import android.view.View
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -10,12 +12,13 @@ import androidx.core.content.ContextCompat
 
 import kotlin.math.roundToInt
 
-class GameView(private val activity: Activity) {
+class GameView(private val activity: Activity, private val gameActions: GameActions) {
 
     // Get references to the top layout containers
     private val freeCellLayout = activity.findViewById<LinearLayout>(R.id.freeCellLayout)
     private val foundationLayout = activity.findViewById<LinearLayout>(R.id.foundationLayout)
-    // Properties to hold the calculated card dimensions
+    // We can call this automatically when the view is created
+    private var restartButton: ImageButton = activity.findViewById(R.id.restartButton)
     private var cardWidth = 0
     private var cardHeight = 0
 
@@ -25,17 +28,18 @@ class GameView(private val activity: Activity) {
         R.id.tableauColumn5, R.id.tableauColumn6, R.id.tableauColumn7, R.id.tableauColumn8
     )
     init {
-        // We can call this automatically when the view is created
+        restartButton.setOnClickListener {
+            gameActions.onRestartClicked() // Call the interface method
+        }
         calculateCardDimensions()
     }
     fun drawGameState(
         gameState: GameState,
-        onCardClick: (Card, Int) -> Unit,
-        onFreeCellCardClick: (Card, Int) -> Unit
+        onCardClick: (Card, String, Int) -> Unit
     ) {
-        drawTopLayouts(gameState, cardWidth, cardHeight,  onFreeCellCardClick)
+        drawTopLayouts(gameState, cardWidth, cardHeight,  onCardClick)
         drawTableau(gameState, cardWidth, cardHeight,  onCardClick)
-        DrawGameNumber(gameState.gameNumber)
+        drawGameNumber(gameState.gameNumber)
     }
 
     fun calculateCardDimensions() {
@@ -53,7 +57,7 @@ class GameView(private val activity: Activity) {
         cardHeight = (cardWidth * 1.4).roundToInt()
     }
 
-    private fun DrawGameNumber(gameNumber: Int) {
+    private fun drawGameNumber(gameNumber: Int) {
         val gameNumberTextView = activity.findViewById<TextView>(R.id.gameNumberTextView)
         gameNumberTextView.text = "$gameNumber"
     }
@@ -64,7 +68,7 @@ class GameView(private val activity: Activity) {
         gameState: GameState,
         cardWidth: Int,
         cardHeight: Int,
-        onFreeCellCardClick: (Card, Int) -> Unit
+        onFreeCellCardClick: (Card, String, Int) -> Unit
     ) {
         freeCellLayout.removeAllViews()
         foundationLayout.removeAllViews()
@@ -78,7 +82,7 @@ class GameView(private val activity: Activity) {
                 val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
                 cardView.layoutParams = layoutParams
                 cardView.setOnClickListener {
-                    onFreeCellCardClick(card, i)
+                    onFreeCellCardClick(card, "freecell", i)
                 }
                 populateCardView(cardView, card)
                 freeCellLayout.addView(cardView)
@@ -115,7 +119,7 @@ class GameView(private val activity: Activity) {
     }
 
 
-    private fun populateCardView(cardView: android.view.View, card: Card) {
+    private fun populateCardView(cardView: View, card: Card) {
         val valueTextView = cardView.findViewById<TextView>(R.id.valueTextView)
         val suitTextView = cardView.findViewById<TextView>(R.id.suitTextView)
         val suitTopRightTextView = cardView.findViewById<TextView>(R.id.suitSmallTextView)
@@ -139,7 +143,7 @@ class GameView(private val activity: Activity) {
         gameState: GameState,
         cardWidth: Int,
         cardHeight: Int,
-        onCardClick: (Card, Int) -> Unit
+        onCardClick: (Card, String, Int) -> Unit
     ) {
         tableauColumnIds.forEachIndexed { index, columnId ->
             val pileNum = index + 1
@@ -164,27 +168,11 @@ class GameView(private val activity: Activity) {
                     }
                     cardView.layoutParams = layoutParams
 
-                    val valueTextView = cardView.findViewById<TextView>(R.id.valueTextView)
-                    val suitTextView = cardView.findViewById<TextView>(R.id.suitTextView)
-                    val suitTopRightTextView = cardView.findViewById<TextView>(R.id.suitSmallTextView)
-
-                    valueTextView.text = getRankString(card.rank)
-                    suitTextView.text = getSuitString(card.suit)
-                    suitTopRightTextView.text = getSuitString(card.suit)
-
-                    val color = if (card.suit == Suit.DIAMONDS || card.suit == Suit.HEARTS) {
-                        ContextCompat.getColor(activity, R.color.red_card)
-                    } else {
-                        ContextCompat.getColor(activity, R.color.black_card)
-                    }
-                    valueTextView.setTextColor(color)
-                    suitTextView.setTextColor(color)
-                    suitTopRightTextView.setTextColor(color)
-
+                    populateCardView(cardView, card)
                     // Only the top card in the stack (the last one) gets a click listener.
                     if (card == lastCardInPile) {
                         cardView.setOnClickListener {
-                            onCardClick(card, pileNum)
+                            onCardClick(card, "tableau", pileNum)
                         }
                     }
 
@@ -194,7 +182,6 @@ class GameView(private val activity: Activity) {
         }
     }
 
-    // Helper functions moved from MainActivity
     private fun getRankString(rank: Rank): String {
         return when (rank) {
             Rank.ACE -> "A"

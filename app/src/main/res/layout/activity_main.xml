@@ -63,4 +63,31 @@
         tools:text="11982" />
 
 
+    <ImageButton
+        android:id="@+id/undoButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/undo_move"
+        android:src="@drawable/ic_undo"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="#FFFFFF" />
+
+    <ImageButton
+        android:id="@+id/restartButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/restart_game"
+        android:src="@drawable/ic_restart"
+        app:layout_constraintBottom_toBottomOf="@id/undoButton"
+        app:layout_constraintEnd_toStartOf="@id/undoButton"
+        app:layout_constraintTop_toTopOf="@id/undoButton"
+        app:tint="#FFFFFF" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
