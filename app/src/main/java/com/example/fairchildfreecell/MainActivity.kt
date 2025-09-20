@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity(), GameActions {
 
         if (bestMove != null) {
             val moveEvent = gameState.moveCard(card, sourceSection, column, bestMove)
-            gameView.updateViewForMove(moveEvent)
+            gameView.updateViewForMove(moveEvent, this::onCardTapped)
         }
     }
 

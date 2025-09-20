@@ -42,7 +42,10 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         drawBoard(gameState, cardWidth, cardHeight,  onCardTap)
         drawGameNumber(gameState.gameNumber)
     }
-    fun updateViewForMove( moveEvent: MoveEvent) {
+    fun updateViewForMove(
+        moveEvent: MoveEvent,
+        onCardTap: (Card, GameSection, Int) -> Unit // Add this parameter
+    ) {
         val cardView = cardViewMap[moveEvent.card] ?: return // Find the view for the moved card
 
 
@@ -77,11 +80,28 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             }
         }
 
-        // 3. Update placeholders and click listeners (simplified)
-        // - If sourceParent is now empty, add a placeholder.
-        // - If destParent previously had a placeholder, remove it.
-        // - Update the click listener on the new top card of the source pile.
-        // ... this logic needs to be built out ...
+        if (moveEvent.destination.section != GameSection.FOUNDATION) {
+            cardView.setOnClickListener {
+                onCardTap(moveEvent.card, moveEvent.destination.section, moveEvent.destination.columnIndex)
+            }
+        }
+        if (moveEvent.source.section == GameSection.BOARD) {
+            // We need access to the gameState to find the new top card.
+            // It's best to pass gameState into this function in the future,
+            // but for now we can get the card from the sourceParent's last child.
+            if (sourceParent.isNotEmpty()) {
+                val lastChildView = sourceParent.getChildAt(sourceParent.childCount - 1)
+
+                // Find the card associated with this view in our map
+                val newTopCard = cardViewMap.entries.find { it.value == lastChildView }?.key
+
+                if (newTopCard != null) {
+                    lastChildView.setOnClickListener {
+                        onCardTap(newTopCard, GameSection.BOARD, moveEvent.source.columnIndex)
+                    }
+                }
+            }
+        }
     }
 
     private fun findParentLayout(location: CardLocation): LinearLayout {
