@@ -1,28 +1,12 @@
 package com.example.fairchildfreecell
-// In GameState.kt, at the top of the file before the class definition
-
-enum class GameSection {
-    BOARD, FOUNDATION, FREECELL
-}
-
-data class MoveDestination(
-    val type: GameSection,
-    val index: Int,
-    val isEmpty: Boolean
-)
-
 
 class GameState(val gameNumber: Int) {
     val boardPiles = mutableMapOf<Int, MutableList<Card>>()
     val foundationPiles = mutableMapOf<Int, MutableList<Card>>()
     val freeCellPiles = mutableMapOf<Int, Card?>()
 
-
     init {
-        // Get a shuffled deck using the classic Microsoft algorithm
         val deck = MSDealGenerator.getShuffledDeck(gameNumber)
-
-        // Initialize and deal the cards
         initializePiles()
         dealCards(deck)
     }
@@ -45,7 +29,7 @@ class GameState(val gameNumber: Int) {
         }
     }
 
-    fun findBestMove(card: Card, sourceSection: GameSection): MoveDestination? {
+    fun findBestMove(card: Card, sourceSection: GameSection): CardLocation? {
         // 1. Always prioritize moving to the foundation.
         findBestFoundationMove(card)?.let { return it }
 
@@ -69,7 +53,7 @@ class GameState(val gameNumber: Int) {
         }
     }
 
-    fun moveCard(card: Card, sourceSection: GameSection, sourceNum: Int, destination: MoveDestination) {
+    fun moveCard(card: Card, sourceSection: GameSection, sourceNum: Int, destination: CardLocation) {
 
         when (sourceSection) {
             GameSection.BOARD -> boardPiles[sourceNum]?.remove(card)
@@ -77,10 +61,10 @@ class GameState(val gameNumber: Int) {
             else -> {}
         }
 
-        when (destination.type) {
-            GameSection.BOARD  -> boardPiles[destination.index]?.add(card)
-            GameSection.FOUNDATION -> foundationPiles[destination.index]?.add(card)
-            GameSection.FREECELL -> freeCellPiles[destination.index] = card
+        when (destination.section) {
+            GameSection.BOARD  -> boardPiles[destination.columnIndex]?.add(card)
+            GameSection.FOUNDATION -> foundationPiles[destination.columnIndex]?.add(card)
+            GameSection.FREECELL -> freeCellPiles[destination.columnIndex] = card
         }
     }
 
@@ -88,7 +72,7 @@ class GameState(val gameNumber: Int) {
 
 
 
-    private fun findBestFoundationMove(card: Card): MoveDestination? {
+    private fun findBestFoundationMove(card: Card): CardLocation? {
         val targetPileNum = if (card.rank == Rank.ACE) {
             foundationPiles.entries.find { it.value.isEmpty() }?.key
         } else {
@@ -100,11 +84,11 @@ class GameState(val gameNumber: Int) {
 
         return targetPileNum?.let {
             val isEmpty = foundationPiles[it]?.isEmpty() ?: true
-            MoveDestination(GameSection.FOUNDATION, it, isEmpty)
+            CardLocation(GameSection.FOUNDATION, it, isEmpty)
         }
     }
 
-    private fun findBestBoardMove(card: Card): MoveDestination? {
+    private fun findBestBoardMove(card: Card): CardLocation? {
         val validDestinations = boardPiles.filter { entry ->
             val targetPile = entry.value
             if (targetPile.isEmpty()) {
@@ -122,16 +106,16 @@ class GameState(val gameNumber: Int) {
         }
 
         return bestDestinationEntry?.let {
-            MoveDestination(GameSection.BOARD, it.key, it.value.isEmpty())
+            CardLocation(GameSection.BOARD, it.key, it.value.isEmpty())
         }
     }
 
 
 
-    private fun findFirstEmptyFreecell(): MoveDestination? {
+    private fun findFirstEmptyFreecell(): CardLocation? {
             val targetCellNum = freeCellPiles.entries.find { it.value == null }?.key
             return targetCellNum?.let {
-                MoveDestination(GameSection.FREECELL, it, true)
+                CardLocation(GameSection.FREECELL, it, true)
             }
 
 
