@@ -38,7 +38,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         onCardTap: (Card, GameSection, Int) -> Unit
     ) {
         cardViewMap.clear()
-        drawTopLayouts(gameState, cardWidth, cardHeight,  onCardTap)
+        drawTopLayouts(cardWidth, cardHeight)
         drawBoard(gameState, cardWidth, cardHeight,  onCardTap)
         drawGameNumber(gameState.gameNumber)
     }
@@ -89,60 +89,23 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
     // In GameView.kt
 
-    private fun drawTopLayouts(
-        gameState: GameState,
-        cardWidth: Int,
-        cardHeight: Int,
-        onCardTap: (Card, GameSection, Int) -> Unit
-    ) {
+    private fun drawTopLayouts(cardWidth: Int, cardHeight: Int) {
+        freeCellLayout.removeAllViews()
+        foundationLayout.removeAllViews()
 
-//        freeCellLayout.removeAllViews()
-//        foundationLayout.removeAllViews()
-
-        // Draw the Free Cell piles
-        for (i in 0..3) {
-            val card = gameState.freeCellPiles[i]
-            if (card != null) {
-                // If a card exists, create and add a card view
-                val cardView = LayoutInflater.from(activity).inflate(R.layout.card_layout, freeCellLayout, false)
-                val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
-                cardView.layoutParams = layoutParams
-                cardView.setOnClickListener {
-                    onCardTap(card, GameSection.FREECELL, i)
-                }
-                populateCardView(cardView, card)
-                cardViewMap[card] = cardView
-                freeCellLayout.addView(cardView)
-            } else {
-                // If the cell is empty, draw a placeholder
-                val placeholder = ImageView(activity)
-                placeholder.setBackgroundResource(R.drawable.placeholder_background)
-                val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
-                placeholder.layoutParams = layoutParams
-                freeCellLayout.addView(placeholder)
-            }
+        // A helper function to avoid repeating the placeholder creation code
+        fun createPlaceholder(): ImageView {
+            val placeholder = ImageView(activity)
+            placeholder.setBackgroundResource(R.drawable.placeholder_background)
+            val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
+            placeholder.layoutParams = layoutParams
+            return placeholder
         }
 
-        // Draw the Foundation piles
-        for (i in 0..3) {
-            val foundationPile = gameState.foundationPiles[i]
-            val topCard = foundationPile?.lastOrNull()
-            if (topCard != null) {
-                // If the pile is not empty, draw the top card
-                val cardView = LayoutInflater.from(activity).inflate(R.layout.card_layout, foundationLayout, false)
-                val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
-                cardView.layoutParams = layoutParams
-                populateCardView(cardView, topCard)
-                cardViewMap[topCard] = cardView
-                foundationLayout.addView(cardView)
-            } else {
-                // If the pile is empty, draw a placeholder
-                val placeholder = ImageView(activity)
-                placeholder.setBackgroundResource(R.drawable.placeholder_background)
-                val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
-                placeholder.layoutParams = layoutParams
-                foundationLayout.addView(placeholder)
-            }
+        // Draw 4 placeholders for each top layout
+        (0..3).forEach { i ->
+            freeCellLayout.addView(createPlaceholder())
+            foundationLayout.addView(createPlaceholder())
         }
     }
 
