@@ -15,10 +15,9 @@ import kotlin.math.roundToInt
 
 class GameView(private val activity: Activity, private val gameActions: GameActions) {
 
-    // Get references to the top layout containers
+    private val cardViewMap = mutableMapOf<Card, View>()
     private val freeCellLayout = activity.findViewById<LinearLayout>(R.id.freeCellLayout)
     private val foundationLayout = activity.findViewById<LinearLayout>(R.id.foundationLayout)
-    // We can call this automatically when the view is created
     private var restartButton: ImageButton = activity.findViewById(R.id.restartButton)
     private var cardWidth = 0
     private var cardHeight = 0
@@ -34,16 +33,41 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         }
         calculateCardDimensions()
     }
-    fun drawGameState(
+    fun drawNewGame(
         gameState: GameState,
         onCardTap: (Card, GameSection, Int) -> Unit
     ) {
+        cardViewMap.clear()
         drawTopLayouts(gameState, cardWidth, cardHeight,  onCardTap)
         drawBoard(gameState, cardWidth, cardHeight,  onCardTap)
         drawGameNumber(gameState.gameNumber)
     }
+    fun updateViewForMove( moveEvent: MoveEvent) {
+        val cardView = cardViewMap[moveEvent.card] ?: return // Find the view for the moved card
 
-    fun calculateCardDimensions() {
+        // 1. Remove the view from its old parent
+        val sourceParent = findParentLayout(moveEvent.source)
+        sourceParent.removeView(cardView)
+
+        // 2. Add the view to its new parent
+        val destParent = findParentLayout(moveEvent.destination)
+        destParent.addView(cardView)
+
+        // 3. Update placeholders and click listeners (simplified)
+        // - If sourceParent is now empty, add a placeholder.
+        // - If destParent previously had a placeholder, remove it.
+        // - Update the click listener on the new top card of the source pile.
+        // ... this logic needs to be built out ...
+    }
+
+    private fun findParentLayout(location: CardLocation): LinearLayout {
+        return when (location.section) {
+            GameSection.BOARD -> activity.findViewById(boardColumnIds[location.columnIndex - 1])
+            GameSection.FREECELL -> freeCellLayout
+            GameSection.FOUNDATION -> foundationLayout
+        }
+    }
+    private fun calculateCardDimensions() {
         // Get the width of the screen in pixels
         val screenWidth = activity.resources.displayMetrics.widthPixels
 
@@ -71,8 +95,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         cardHeight: Int,
         onCardTap: (Card, GameSection, Int) -> Unit
     ) {
-        freeCellLayout.removeAllViews()
-        foundationLayout.removeAllViews()
+
+//        freeCellLayout.removeAllViews()
+//        foundationLayout.removeAllViews()
 
         // Draw the Free Cell piles
         for (i in 0..3) {
@@ -86,6 +111,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     onCardTap(card, GameSection.FREECELL, i)
                 }
                 populateCardView(cardView, card)
+                cardViewMap[card] = cardView
                 freeCellLayout.addView(cardView)
             } else {
                 // If the cell is empty, draw a placeholder
@@ -107,6 +133,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
                 cardView.layoutParams = layoutParams
                 populateCardView(cardView, topCard)
+                cardViewMap[topCard] = cardView
                 foundationLayout.addView(cardView)
             } else {
                 // If the pile is empty, draw a placeholder
@@ -170,6 +197,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     cardView.layoutParams = layoutParams
 
                     populateCardView(cardView, card)
+                    cardViewMap[card] = cardView
+
                     // Only the top card in the stack (the last one) gets a click listener.
                     if (card == lastCardInPile) {
                         cardView.setOnClickListener {

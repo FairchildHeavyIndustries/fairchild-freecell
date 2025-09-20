@@ -16,6 +16,12 @@ enum class Rank {
     ACE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN, JACK, QUEEN, KING
 }
 
+data class MoveEvent(
+    val card: Card,
+    val source: CardLocation,
+    val destination: CardLocation
+)
+
 
 data class Card(val suit: Suit, val rank: Rank)
 

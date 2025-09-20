@@ -10,6 +10,19 @@ class MainActivity : AppCompatActivity(), GameActions {
     private lateinit var gameView: GameView
 
 
+    private fun onCardTapped(card: Card, sourceSection: GameSection, column: Int) {
+        val bestMove = gameState.findBestMove(card, sourceSection)
+
+        if (bestMove != null) {
+            val moveEvent = gameState.moveCard(card, sourceSection, column, bestMove)
+            gameView.updateViewForMove(moveEvent)
+        }
+    }
+
+    private fun refreshGameView() {
+        gameView.drawNewGame(gameState, this::onCardTapped)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -36,19 +49,7 @@ class MainActivity : AppCompatActivity(), GameActions {
         refreshGameView()
     }
 
-    private fun onCardTapped(card: Card, sourceSection: GameSection, column: Int) {
-        val bestMove = gameState.findBestMove(card, sourceSection)
 
-        if (bestMove != null) {
-            gameState.moveCard(card, sourceSection, column, bestMove)
-            refreshGameView()
-        }
-    }
-
-
-    private fun refreshGameView() {
-        gameView.drawGameState(gameState, this::onCardTapped)
-    }
 
 
 

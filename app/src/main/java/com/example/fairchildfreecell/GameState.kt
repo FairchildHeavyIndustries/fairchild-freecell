@@ -53,19 +53,30 @@ class GameState(val gameNumber: Int) {
         }
     }
 
-    fun moveCard(card: Card, sourceSection: GameSection, sourceNum: Int, destination: CardLocation) {
+    fun moveCard(card: Card, sourceSection: GameSection, sourceNum: Int, destination: CardLocation) : MoveEvent {
+
+        val sourceWasEmpty = when (sourceSection) {
+            GameSection.BOARD -> boardPiles[sourceNum]?.isEmpty() ?: true
+            GameSection.FREECELL -> freeCellPiles[sourceNum] == null
+            GameSection.FOUNDATION -> foundationPiles[sourceNum]?.isEmpty() ?: true
+        }
+        val source = CardLocation(sourceSection, sourceNum, sourceWasEmpty)
+
 
         when (sourceSection) {
             GameSection.BOARD -> boardPiles[sourceNum]?.remove(card)
             GameSection.FREECELL -> freeCellPiles[sourceNum] = null
-            else -> {}
+            GameSection.FOUNDATION -> foundationPiles[sourceNum]?.remove(card)
         }
 
         when (destination.section) {
-            GameSection.BOARD  -> boardPiles[destination.columnIndex]?.add(card)
+            GameSection.BOARD -> boardPiles[destination.columnIndex]?.add(card)
             GameSection.FOUNDATION -> foundationPiles[destination.columnIndex]?.add(card)
             GameSection.FREECELL -> freeCellPiles[destination.columnIndex] = card
         }
+
+        // Return the result of the move
+        return MoveEvent(card, source, destination)
     }
 
 
