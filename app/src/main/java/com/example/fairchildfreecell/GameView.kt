@@ -51,7 +51,22 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
         // 2. Add the view to its new parent
         val destParent = findParentLayout(moveEvent.destination)
-        destParent.addView(cardView)
+        when (moveEvent.destination.section) {
+            GameSection.BOARD -> {
+                // For board piles, adding to the end is correct.
+                destParent.addView(cardView)
+            }
+            GameSection.FREECELL, GameSection.FOUNDATION -> {
+                // For free cells and foundations, we replace the view at the destination index.
+                val destinationIndex = moveEvent.destination.columnIndex
+
+                // Remove the placeholder (or existing card) at the target spot.
+                destParent.removeViewAt(destinationIndex)
+
+                // Add the new card view at that same spot.
+                destParent.addView(cardView, destinationIndex)
+            }
+        }
 
         // 3. Update placeholders and click listeners (simplified)
         // - If sourceParent is now empty, add a placeholder.
