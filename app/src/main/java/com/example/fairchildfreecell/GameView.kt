@@ -97,14 +97,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             }
         }
         if (moveEvent.source.section == GameSection.BOARD) {
-            // We need access to the gameState to find the new top card.
-            // It's best to pass gameState into this function in the future,
-            // but for now we can get the card from the sourceParent's last child.
             if (sourceParent.isNotEmpty()) {
                 val lastChildView = sourceParent.getChildAt(sourceParent.childCount - 1)
-
-                // Find the card associated with this view in our map
-                val newTopCard = cardViewMap.entries.find { it.value == lastChildView }?.key
+                val newTopCard = lastChildView.tag as? Card
 
                 if (newTopCard != null) {
                     lastChildView.setOnClickListener {
@@ -202,7 +197,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
                 for (card in pile) {
                     val cardView = LayoutInflater.from(activity).inflate(R.layout.card_layout, boardColumn, false)
-
+                    cardView.tag = card
                     val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
                     layoutParams.width = cardWidth
                     layoutParams.height = cardHeight
