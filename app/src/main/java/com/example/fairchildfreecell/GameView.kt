@@ -125,6 +125,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     // In GameView.kt
 
     private fun drawTopLayouts() {
+        freeCellLayout.removeAllViews()
+        foundationLayout.removeAllViews()
+
         (0..3).forEach { i ->
             freeCellLayout.addView(createPlaceholderView())
             foundationLayout.addView(createPlaceholderView())
