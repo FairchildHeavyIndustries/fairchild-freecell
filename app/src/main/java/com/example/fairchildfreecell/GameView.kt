@@ -19,6 +19,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     private val freeCellLayout = activity.findViewById<LinearLayout>(R.id.freeCellLayout)
     private val foundationLayout = activity.findViewById<LinearLayout>(R.id.foundationLayout)
     private var restartButton: ImageButton = activity.findViewById(R.id.restartButton)
+    private var undoButton: ImageButton = activity.findViewById(R.id.undoButton)
+
     private var cardWidth = 0
     private var cardHeight = 0
 
@@ -31,6 +33,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         restartButton.setOnClickListener {
             gameActions.onRestartClicked() // Call the interface method
         }
+        undoButton.setOnClickListener {
+            gameActions.onUndoClicked()
+        }
         calculateCardDimensions()
     }
     fun drawNewGame(
@@ -38,7 +43,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         onCardTap: (Card, GameSection, Int) -> Unit
     ) {
         cardViewMap.clear()
-        drawTopLayouts(cardWidth, cardHeight)
+        drawTopLayouts()
         drawBoard(gameState, cardWidth, cardHeight,  onCardTap)
         drawGameNumber(gameState.gameNumber)
     }
@@ -51,6 +56,12 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
         val sourceParent = findParentLayout(moveEvent.source)
         sourceParent.removeView(cardView)
+
+        if (moveEvent.source.section == GameSection.FREECELL || moveEvent.source.section == GameSection.FOUNDATION) {
+            val placeholder = createPlaceholderView() // Use a helper function
+            // Add the placeholder at the original index of the card that was moved.
+            sourceParent.addView(placeholder, moveEvent.source.columnIndex)
+        }
 
 
         // This removes the negative top margin from the tableau stack.
@@ -104,6 +115,14 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         }
     }
 
+
+    private fun createPlaceholderView(): ImageView {
+        val placeholder = ImageView(activity)
+        placeholder.setBackgroundResource(R.drawable.placeholder_background)
+        val params = LinearLayout.LayoutParams(cardWidth, cardHeight)
+        placeholder.layoutParams = params
+        return placeholder
+    }
     private fun findParentLayout(location: CardLocation): LinearLayout {
         return when (location.section) {
             GameSection.BOARD -> activity.findViewById(boardColumnIds[location.columnIndex - 1])
@@ -133,23 +152,14 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
     // In GameView.kt
 
-    private fun drawTopLayouts(cardWidth: Int, cardHeight: Int) {
+    private fun drawTopLayouts() {
         freeCellLayout.removeAllViews()
         foundationLayout.removeAllViews()
 
-        // A helper function to avoid repeating the placeholder creation code
-        fun createPlaceholder(): ImageView {
-            val placeholder = ImageView(activity)
-            placeholder.setBackgroundResource(R.drawable.placeholder_background)
-            val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
-            placeholder.layoutParams = layoutParams
-            return placeholder
-        }
-
         // Draw 4 placeholders for each top layout
         (0..3).forEach { i ->
-            freeCellLayout.addView(createPlaceholder())
-            foundationLayout.addView(createPlaceholder())
+            freeCellLayout.addView(createPlaceholderView())
+            foundationLayout.addView(createPlaceholderView())
         }
     }
 
