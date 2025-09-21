@@ -64,7 +64,7 @@ class GameState(val gameNumber: Int) {
         }
 
         val sourceLocation = CardLocation(sourceSection, sourceColumn)
-        val destination = findBestDestinationFor(stackToMove, sourceLocation) ?: return null
+        val destination = findBestMove(stackToMove, sourceLocation) ?: return null
 
         val moveEvent = MoveEvent(stackToMove, sourceLocation, destination)
         performMove(moveEvent)
@@ -108,7 +108,7 @@ class GameState(val gameNumber: Int) {
         }
     }
 
-    private fun findBestDestinationFor(stackToMove: List<Card>, source: CardLocation): CardLocation? {
+    private fun findBestMove(stackToMove: List<Card>, source: CardLocation): CardLocation? {
         // Priority 1: Foundation (only for single cards)
         if (stackToMove.size == 1) {
             findBestFoundationMove(stackToMove.first())?.let { return it }
@@ -122,7 +122,10 @@ class GameState(val gameNumber: Int) {
             bestBoardMove != null && bestFreeCellMove == null -> bestBoardMove
             bestBoardMove == null && bestFreeCellMove != null -> bestFreeCellMove
             bestBoardMove != null && bestFreeCellMove != null -> {
-                if (stackToMove.first().rank == Rank.KING || source.section == GameSection.FREECELL) {
+                val isBoardMoveToEmptyPile = boardPiles[bestBoardMove.columnIndex]?.isEmpty() ?: false
+                if ((stackToMove.first().rank == Rank.KING) || (isBoardMoveToEmptyPile  && source.section == GameSection.FREECELL) || !isBoardMoveToEmptyPile ) {
+                    //if ((card.rank == Rank.KING) || (bestBoardMove.isEmpty && sourceSection == GameSection.FREECELL) || !bestBoardMove.isEmpty) {
+                   //if (!isBoardMoveToEmptyPile || cardToMove.rank == Rank.KING || source.section == GameSection.FREECELL)
                     bestBoardMove
                 } else {
                     bestFreeCellMove

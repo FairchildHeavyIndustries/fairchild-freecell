@@ -73,12 +73,16 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             }
             cardView.layoutParams = layoutParams
 
-            // If destination is a free cell, replace the placeholder.
-            if (moveEvent.destination.section == GameSection.FREECELL) {
-                destParent.removeViewAt(moveEvent.destination.columnIndex)
-                destParent.addView(cardView, moveEvent.destination.columnIndex)
-            } else {
-                destParent.addView(cardView)
+            when (moveEvent.destination.section) {
+                GameSection.BOARD -> {
+                    destParent.addView(cardView)
+                }
+                GameSection.FREECELL, GameSection.FOUNDATION -> {
+                    // Replace the placeholder at the destination index.
+                    val destIndex = moveEvent.destination.columnIndex
+                    destParent.removeViewAt(destIndex)
+                    destParent.addView(cardView, destIndex)
+                }
             }
         }
         updateClickListeners(moveEvent, onCardTap)
