@@ -29,10 +29,8 @@ class MainActivity : AppCompatActivity(), GameActions {
     }
 
     private fun onCardTapped(card: Card, sourceSection: GameSection, column: Int) {
-        val bestMove = gameState.findBestMove(card, sourceSection)
-
-        if (bestMove != null) {
-            val moveEvent = gameState.moveCard(card, sourceSection, column, bestMove)
+        val moveEvent = gameState.moveCard(card, sourceSection, column)
+        if (moveEvent != null) {
             gameView.updateViewForMove(moveEvent, this::onCardTapped)
         }
     }

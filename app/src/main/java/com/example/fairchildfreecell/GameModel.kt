@@ -5,8 +5,7 @@ enum class GameSection {
 }
 data class CardLocation(
     val section: GameSection,
-    val columnIndex: Int,
-    val isEmpty: Boolean
+    val columnIndex: Int
 )
 enum class Suit {
     CLUBS, DIAMONDS, HEARTS, SPADES
@@ -17,7 +16,7 @@ enum class Rank {
 }
 
 data class MoveEvent(
-    val card: Card,
+    val cards: List<Card>,
     val source: CardLocation,
     val destination: CardLocation
 )

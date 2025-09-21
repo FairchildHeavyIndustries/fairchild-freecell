@@ -47,75 +47,48 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         drawBoard(gameState, cardWidth, cardHeight,  onCardTap)
         drawGameNumber(gameState.gameNumber)
     }
-    fun updateViewForMove(
-        moveEvent: MoveEvent,
-        onCardTap: (Card, GameSection, Int) -> Unit // Add this parameter
-    ) {
-        val cardView = cardViewMap[moveEvent.card] ?: return // Find the view for the moved card
-
-
+    fun updateViewForMove(moveEvent: MoveEvent, onCardTap: (Card, GameSection, Int) -> Unit) {
         val sourceParent = findParentLayout(moveEvent.source)
-        sourceParent.removeView(cardView)
+        val destParent = findParentLayout(moveEvent.destination)
 
-        if (moveEvent.source.section == GameSection.FREECELL || moveEvent.source.section == GameSection.FOUNDATION) {
-            val placeholder = createPlaceholderView() // Use a helper function
-            // Add the placeholder at the original index of the card that was moved.
-            sourceParent.addView(placeholder, moveEvent.source.columnIndex)
+        // Restore placeholder if the source was a free cell.
+        if (moveEvent.source.section == GameSection.FREECELL) {
+            sourceParent.removeViewAt(moveEvent.source.columnIndex)
+            sourceParent.addView(createPlaceholderView(), moveEvent.source.columnIndex)
         }
 
+        // Move each card's view.
+        moveEvent.cards.forEach { card ->
+            val cardView = cardViewMap[card] ?: return@forEach
+            val parent = cardView.parent as? LinearLayout
+            parent?.removeView(cardView)
 
-        // This removes the negative top margin from the tableau stack.
-        val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
-        layoutParams.topMargin = 0 // Reset the margin
-        cardView.layoutParams = layoutParams
+            // Reset margins before adding to a new parent.
+            val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
+            layoutParams.topMargin = 0
 
+            // Apply new margins if moving to a board pile.
+            if (moveEvent.destination.section == GameSection.BOARD && destParent.isNotEmpty()) {
+                layoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
+            }
+            cardView.layoutParams = layoutParams
 
-        val destParent = findParentLayout(moveEvent.destination)
-        when (moveEvent.destination.section) {
-            GameSection.BOARD -> {
-                if (destParent.isNotEmpty()) {
-                    val overlap = (cardHeight * 0.65).roundToInt()
-                    layoutParams.topMargin = -overlap
-                }
+            // If destination is a free cell, replace the placeholder.
+            if (moveEvent.destination.section == GameSection.FREECELL) {
+                destParent.removeViewAt(moveEvent.destination.columnIndex)
+                destParent.addView(cardView, moveEvent.destination.columnIndex)
+            } else {
                 destParent.addView(cardView)
             }
-            GameSection.FREECELL, GameSection.FOUNDATION -> {
-                // For free cells and foundations, we replace the view at the destination index.
-                val destinationIndex = moveEvent.destination.columnIndex
-
-                // Remove the placeholder (or existing card) at the target spot.
-                destParent.removeViewAt(destinationIndex)
-
-                // Add the new card view at that same spot.
-                destParent.addView(cardView, destinationIndex)
-            }
         }
-
-        if (moveEvent.destination.section != GameSection.FOUNDATION) {
-            cardView.setOnClickListener {
-                onCardTap(moveEvent.card, moveEvent.destination.section, moveEvent.destination.columnIndex)
-            }
-        }
-        if (moveEvent.source.section == GameSection.BOARD) {
-            if (sourceParent.isNotEmpty()) {
-                val lastChildView = sourceParent.getChildAt(sourceParent.childCount - 1)
-                val newTopCard = lastChildView.tag as? Card
-
-                if (newTopCard != null) {
-                    lastChildView.setOnClickListener {
-                        onCardTap(newTopCard, GameSection.BOARD, moveEvent.source.columnIndex)
-                    }
-                }
-            }
-        }
+        updateClickListeners(moveEvent, onCardTap)
     }
 
 
     private fun createPlaceholderView(): ImageView {
         val placeholder = ImageView(activity)
         placeholder.setBackgroundResource(R.drawable.placeholder_background)
-        val params = LinearLayout.LayoutParams(cardWidth, cardHeight)
-        placeholder.layoutParams = params
+        placeholder.layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
         return placeholder
     }
     private fun findParentLayout(location: CardLocation): LinearLayout {
@@ -148,10 +121,6 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     // In GameView.kt
 
     private fun drawTopLayouts() {
-        freeCellLayout.removeAllViews()
-        foundationLayout.removeAllViews()
-
-        // Draw 4 placeholders for each top layout
         (0..3).forEach { i ->
             freeCellLayout.addView(createPlaceholderView())
             foundationLayout.addView(createPlaceholderView())
@@ -178,12 +147,32 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         suitTopRightTextView.setTextColor(color)
     }
 
-
+    private fun updateClickListeners(moveEvent: MoveEvent, onCardTap: (Card, GameSection, Int) -> Unit) {
+        // Set listener on the top card of the destination pile.
+        val destParent = findParentLayout(moveEvent.destination)
+        if (destParent.isNotEmpty()) {
+            val topView = destParent.getChildAt(destParent.childCount - 1)
+            cardViewMap.entries.find { it.value == topView }?.key?.let { topCard ->
+                if (moveEvent.destination.section != GameSection.FOUNDATION) {
+                    topView.setOnClickListener { onCardTap(topCard, moveEvent.destination.section, moveEvent.destination.columnIndex) }
+                } else {
+                    topView.setOnClickListener(null)
+                }
+            }
+        }
+        // Set listener on the newly exposed card in the source pile.
+        if (moveEvent.source.section == GameSection.BOARD) {
+            val sourceParent = findParentLayout(moveEvent.source)
+            if (sourceParent.isNotEmpty()) {
+                val exposedView = sourceParent.getChildAt(sourceParent.childCount - 1)
+                cardViewMap.entries.find { it.value == exposedView }?.key?.let { exposedCard ->
+                    exposedView.setOnClickListener { onCardTap(exposedCard, GameSection.BOARD, moveEvent.source.columnIndex) }
+                }
+            }
+        }
+    }
     private fun drawBoard(
-        gameState: GameState,
-        cardWidth: Int,
-        cardHeight: Int,
-        onCardTap: (Card, GameSection, Int) -> Unit
+        gameState: GameState, cardWidth: Int, cardHeight: Int, onCardTap: (Card, GameSection, Int) -> Unit
     ) {
         boardColumnIds.forEachIndexed { index, columnId ->
             val pileNum = index + 1
@@ -191,35 +180,21 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             boardColumn.removeAllViews()
 
             val pile = gameState.boardPiles[pileNum]
-            if (pile != null && pile.isNotEmpty()) {
-                // Find the last card in the pile before the loop starts.
-                val lastCardInPile = pile.last()
-
-                for (card in pile) {
-                    val cardView = LayoutInflater.from(activity).inflate(R.layout.card_layout, boardColumn, false)
-                    cardView.tag = card
-                    val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
-                    layoutParams.width = cardWidth
-                    layoutParams.height = cardHeight
-
-                    if (boardColumn.isNotEmpty()) {
-                        val overlap = (cardHeight * 0.65).roundToInt()
-                        layoutParams.topMargin = -overlap
-                    }
-                    cardView.layoutParams = layoutParams
-
-                    populateCardView(cardView, card)
-                    cardViewMap[card] = cardView
-
-                    // Only the top card in the stack (the last one) gets a click listener.
-                    if (card == lastCardInPile) {
-                        cardView.setOnClickListener {
-                            onCardTap(card, GameSection.BOARD, pileNum)
-                        }
-                    }
-
-                    boardColumn.addView(cardView)
+            pile?.forEach { card ->
+                val cardView = LayoutInflater.from(activity).inflate(R.layout.card_layout, boardColumn, false)
+                val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
+                layoutParams.width = cardWidth
+                layoutParams.height = cardHeight
+                if (boardColumn.isNotEmpty()) {
+                    layoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
                 }
+                cardView.layoutParams = layoutParams
+                populateCardView(cardView, card)
+
+                // Every card gets a click listener.
+                cardView.setOnClickListener { onCardTap(card, GameSection.BOARD, pileNum) }
+                cardViewMap[card] = cardView
+                boardColumn.addView(cardView)
             }
         }
     }
