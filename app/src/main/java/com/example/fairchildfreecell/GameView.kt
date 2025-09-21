@@ -154,13 +154,24 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     private fun updateClickListeners(moveEvent: MoveEvent, onCardTap: (Card, GameSection, Int) -> Unit) {
         // Set listener on the top card of the destination pile.
         val destParent = findParentLayout(moveEvent.destination)
+        val destIndex = moveEvent.destination.columnIndex
         if (destParent.isNotEmpty()) {
-            val topView = destParent.getChildAt(destParent.childCount - 1)
-            cardViewMap.entries.find { it.value == topView }?.key?.let { topCard ->
+            // Determine which view to update based on the layout type.
+            val topView = if (moveEvent.destination.section == GameSection.BOARD) {
+                // For multi-card tableau stacks, the top card is always the last one.
+                destParent.getChildAt(destParent.childCount - 1)
+            } else {
+                // For single-slot layouts (Freecell/Foundation), use the specific index.
+                destParent.getChildAt(destIndex)
+            }
+
+            val topCard = cardViewMap.entries.find { it.value == topView }?.key
+            if (topCard != null) {
+                // Assign the listener with the correct source section and index.
                 if (moveEvent.destination.section != GameSection.FOUNDATION) {
-                    topView.setOnClickListener { onCardTap(topCard, moveEvent.destination.section, moveEvent.destination.columnIndex) }
+                    topView.setOnClickListener { onCardTap(topCard, moveEvent.destination.section, destIndex) }
                 } else {
-                    topView.setOnClickListener(null)
+                    topView.setOnClickListener(null) // Foundation cards are not clickable.
                 }
             }
         }
