@@ -5,6 +5,8 @@ class GameState(val gameNumber: Int) {
     val foundationPiles = mutableMapOf<Int, MutableList<Card>>()
     val freeCellPiles = mutableMapOf<Int, Card?>()
 
+    private val moveHistory = mutableListOf<MoveEvent>()
+
     init {
         val deck = MSDealGenerator.getShuffledDeck(gameNumber)
         initializePiles()
@@ -54,14 +56,18 @@ class GameState(val gameNumber: Int) {
     }
 
     fun moveCard(card: Card, sourceSection: GameSection, sourceNum: Int, destination: CardLocation) : MoveEvent {
+        val moveEvent = doCardMove(card, sourceSection, sourceNum, destination)
+        moveHistory.add(moveEvent)
+        return moveEvent
+    }
 
+    private fun doCardMove(card: Card, sourceSection: GameSection, sourceNum: Int, destination: CardLocation) : MoveEvent {
         val sourceWasEmpty = when (sourceSection) {
             GameSection.BOARD -> boardPiles[sourceNum]?.isEmpty() ?: true
             GameSection.FREECELL -> freeCellPiles[sourceNum] == null
             GameSection.FOUNDATION -> foundationPiles[sourceNum]?.isEmpty() ?: true
         }
         val source = CardLocation(sourceSection, sourceNum, sourceWasEmpty)
-
 
         when (sourceSection) {
             GameSection.BOARD -> boardPiles[sourceNum]?.remove(card)
@@ -75,14 +81,25 @@ class GameState(val gameNumber: Int) {
             GameSection.FREECELL -> freeCellPiles[destination.columnIndex] = card
         }
 
-        // Return the result of the move
-        return MoveEvent(card, source, destination)
+        val moveEvent = MoveEvent(card, source, destination)
+
+        return moveEvent
     }
 
+    fun undoLastMove(): MoveEvent? {
+        if (moveHistory.isEmpty()) {
+            return null
+        }
 
+        val lastMove = moveHistory.removeAt(moveHistory.lastIndex)
 
-
-
+        return doCardMove(
+            card = lastMove.card,
+            sourceSection = lastMove.destination.section,
+            sourceNum = lastMove.destination.columnIndex,
+            destination = lastMove.source
+        )
+    }
     private fun findBestFoundationMove(card: Card): CardLocation? {
         val targetPileNum = if (card.rank == Rank.ACE) {
             foundationPiles.entries.find { it.value.isEmpty() }?.key
