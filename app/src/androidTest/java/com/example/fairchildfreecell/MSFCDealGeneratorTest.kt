@@ -32,4 +32,15 @@ class MSDealGeneratorTest {
         // Check if the resulting shuffled integers match the expected sequence.
         assertEquals("The deck is incorrect.", lastCard, shuffledDeck[51] )
     }
+
+    @Test
+    fun moveCardTest() {
+        val gameState = GameState(1)
+        val card = Card(Suit.HEARTS, Rank.SIX)
+        val sourceSection = GameSection.BOARD
+        val sourceColumn = 1
+        val moveEvent = gameState.moveCard(card, sourceSection, sourceColumn)
+        assertNotNull(moveEvent)
+
+    }
 }

@@ -137,21 +137,41 @@ class GameState(val gameNumber: Int) {
     private fun findBestBoardMoveForStack(stackToMove: List<Card>, sourcePileNum: Int): CardLocation? {
         val emptyFreeCells = freeCellPiles.values.count { it == null }
         val emptyBoardPiles = boardPiles.values.count { it.isEmpty() }
-        val maxMoveSize = (1 + emptyFreeCells) * (2.0.pow(emptyBoardPiles)).toInt()
 
-        if (stackToMove.size > maxMoveSize) return null
+        val validDestinations = boardPiles.entries.filter { (pileNum, pile) ->
+            // A move is invalid if it's to the same pile.
+            if (pileNum == sourcePileNum) return@filter false
 
-        val validDestination = boardPiles.entries.find { (pileNum, pile) ->
-            if (pileNum == sourcePileNum) return@find false
-            if (pile.isEmpty()) return@find true
+            // Determine the maximum number of cards that can be moved.
+            val maxMoveSize = (1 + emptyFreeCells) * (2.0.pow(emptyBoardPiles)).toInt()
 
-            val topCard = pile.last()
-            val bottomCardOfStack = stackToMove.first()
-            val destIsRed = topCard.suit in listOf(Suit.DIAMONDS, Suit.HEARTS)
-            val stackIsRed = bottomCardOfStack.suit in listOf(Suit.DIAMONDS, Suit.HEARTS)
-            destIsRed != stackIsRed && topCard.rank.ordinal == bottomCardOfStack.rank.ordinal + 1
+            // The move is invalid if the stack is too large.
+            if (stackToMove.size > maxMoveSize) return@filter false
+
+            // Check for valid placement (empty pile, or alternating color and sequential rank).
+            if (pile.isEmpty()) {
+                true
+            } else {
+                val topCard = pile.last()
+                val bottomCardOfStack = stackToMove.first()
+                val destIsRed = topCard.suit in listOf(Suit.DIAMONDS, Suit.HEARTS)
+                val stackIsRed = bottomCardOfStack.suit in listOf(Suit.DIAMONDS, Suit.HEARTS)
+                destIsRed != stackIsRed && topCard.rank.ordinal == bottomCardOfStack.rank.ordinal + 1
+            }
         }
-        return validDestination?.let { CardLocation(GameSection.BOARD, it.key) }
+
+        // 2. From the list of valid moves, select the BEST one
+        val bestDestinationEntry = validDestinations.maxByOrNull {
+            // A lower score is better. Prioritize moves that uncover low-rank cards.
+            // Empty piles get a score of -1.
+            if (it.value.isEmpty()) -1 else it.value.minOf { c -> c.rank.ordinal }
+        }
+
+        // 3. Return the best destination as a CardLocation.
+        return bestDestinationEntry?.let {
+            CardLocation(GameSection.BOARD, it.key)
+        }
+
     }
 
     private fun isStackValid(stack: List<Card>): Boolean {
