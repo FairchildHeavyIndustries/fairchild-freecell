@@ -8,10 +8,14 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isNotEmpty
 
 
 import kotlin.math.roundToInt
+
 
 class GameView(private val activity: Activity, private val gameActions: GameActions) {
 
@@ -29,7 +33,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         R.id.tableauColumn1, R.id.tableauColumn2, R.id.tableauColumn3, R.id.tableauColumn4,
         R.id.tableauColumn5, R.id.tableauColumn6, R.id.tableauColumn7, R.id.tableauColumn8
     )
+
     init {
+        hideSystemUI()
         restartButton.setOnClickListener {
             gameActions.onRestartClicked() // Call the interface method
         }
@@ -38,15 +44,17 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         }
         calculateCardDimensions()
     }
+
     fun drawNewGame(
         gameState: GameState,
         onCardTap: (Card, GameSection, Int) -> Unit
     ) {
         cardViewMap.clear()
         drawTopLayouts()
-        drawBoard(gameState, cardWidth, cardHeight,  onCardTap)
+        drawBoard(gameState, cardWidth, cardHeight, onCardTap)
         drawGameNumber(gameState.gameNumber)
     }
+
     fun updateViewForMove(moveEvent: MoveEvent, onCardTap: (Card, GameSection, Int) -> Unit) {
         val sourceParent = findParentLayout(moveEvent.source)
         val destParent = findParentLayout(moveEvent.destination)
@@ -77,6 +85,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 GameSection.BOARD -> {
                     destParent.addView(cardView)
                 }
+
                 GameSection.FREECELL, GameSection.FOUNDATION -> {
                     // Replace the placeholder at the destination index.
                     val destIndex = moveEvent.destination.columnIndex
@@ -88,6 +97,13 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         updateClickListeners(moveEvent, onCardTap)
     }
 
+    private fun hideSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+        val controller = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
 
     private fun createPlaceholderView(): ImageView {
         val placeholder = ImageView(activity)
@@ -95,6 +111,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         placeholder.layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
         return placeholder
     }
+
     private fun findParentLayout(location: CardLocation): LinearLayout {
         return when (location.section) {
             GameSection.BOARD -> activity.findViewById(boardColumnIds[location.columnIndex - 1])
@@ -102,6 +119,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             GameSection.FOUNDATION -> foundationLayout
         }
     }
+
     private fun calculateCardDimensions() {
         // Get the width of the screen in pixels
         val screenWidth = activity.resources.displayMetrics.widthPixels
@@ -154,41 +172,48 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         suitTopRightTextView.setTextColor(color)
     }
 
-    private fun updateClickListeners(moveEvent: MoveEvent, onCardTap: (Card, GameSection, Int) -> Unit) {
-        // Set listener on the top card of the destination pile.
-        val destParent = findParentLayout(moveEvent.destination)
-        val destIndex = moveEvent.destination.columnIndex
-        if (destParent.isNotEmpty()) {
-            // Determine which view to update based on the layout type.
-            val topView = if (moveEvent.destination.section == GameSection.BOARD) {
-                // For multi-card tableau stacks, the top card is always the last one.
-                destParent.getChildAt(destParent.childCount - 1)
-            } else {
-                // For single-slot layouts (Freecell/Foundation), use the specific index.
-                destParent.getChildAt(destIndex)
-            }
-
-            (topView.tag as? Card)?.let { topCard ->
-                if (moveEvent.destination.section != GameSection.FOUNDATION) {
-                    topView.setOnClickListener { onCardTap(topCard, moveEvent.destination.section, destIndex) }
-                } else {
-                    topView.setOnClickListener(null)
+    private fun updateClickListeners(
+        moveEvent: MoveEvent,
+        onCardTap: (Card, GameSection, Int) -> Unit
+    ) {
+        moveEvent.cards.forEach { card ->
+            val cardView = cardViewMap[card] ?: return@forEach
+            if (moveEvent.destination.section != GameSection.FOUNDATION) {
+                cardView.setOnClickListener {
+                    onCardTap(
+                        card,
+                        moveEvent.destination.section,
+                        moveEvent.destination.columnIndex
+                    )
                 }
+            } else {
+                cardView.setOnClickListener(null) // Foundation cards are not clickable.
             }
         }
+
         // Set listener on the newly exposed card in the source pile.
         if (moveEvent.source.section == GameSection.BOARD) {
             val sourceParent = findParentLayout(moveEvent.source)
             if (sourceParent.isNotEmpty()) {
                 val exposedView = sourceParent.getChildAt(sourceParent.childCount - 1)
                 cardViewMap.entries.find { it.value == exposedView }?.key?.let { exposedCard ->
-                    exposedView.setOnClickListener { onCardTap(exposedCard, GameSection.BOARD, moveEvent.source.columnIndex) }
+                    exposedView.setOnClickListener {
+                        onCardTap(
+                            exposedCard,
+                            GameSection.BOARD,
+                            moveEvent.source.columnIndex
+                        )
+                    }
                 }
             }
         }
     }
+
     private fun drawBoard(
-        gameState: GameState, cardWidth: Int, cardHeight: Int, onCardTap: (Card, GameSection, Int) -> Unit
+        gameState: GameState,
+        cardWidth: Int,
+        cardHeight: Int,
+        onCardTap: (Card, GameSection, Int) -> Unit
     ) {
         boardColumnIds.forEachIndexed { index, columnId ->
             val pileNum = index + 1
@@ -197,7 +222,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
             val pile = gameState.boardPiles[pileNum]
             pile?.forEach { card ->
-                val cardView = LayoutInflater.from(activity).inflate(R.layout.card_layout, boardColumn, false)
+                val cardView =
+                    LayoutInflater.from(activity).inflate(R.layout.card_layout, boardColumn, false)
                 val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
                 layoutParams.width = cardWidth
                 layoutParams.height = cardHeight
