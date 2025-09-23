@@ -168,13 +168,11 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 destParent.getChildAt(destIndex)
             }
 
-            val topCard = cardViewMap.entries.find { it.value == topView }?.key
-            if (topCard != null) {
-                // Assign the listener with the correct source section and index.
+            (topView.tag as? Card)?.let { topCard ->
                 if (moveEvent.destination.section != GameSection.FOUNDATION) {
                     topView.setOnClickListener { onCardTap(topCard, moveEvent.destination.section, destIndex) }
                 } else {
-                    topView.setOnClickListener(null) // Foundation cards are not clickable.
+                    topView.setOnClickListener(null)
                 }
             }
         }
@@ -208,6 +206,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 }
                 cardView.layoutParams = layoutParams
                 populateCardView(cardView, card)
+                cardView.tag = card
 
                 // Every card gets a click listener.
                 cardView.setOnClickListener { onCardTap(card, GameSection.BOARD, pileNum) }
