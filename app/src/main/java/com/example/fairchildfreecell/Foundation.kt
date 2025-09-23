@@ -27,6 +27,7 @@ class Foundation {
         val minBlackValue = getMinValueOfColor(CardColor.BLACK)
 
         pilesBySuit.values.forEach { pile ->
+            if (pile.topCard?.value == Value.KING) return@forEach
             val nextCard = Card(pile.nextValue, pile.suit)
             // A card is eligible if its value is not more than 1 above the lowest-valued card of the opposite color.
             val requirementMet = when (nextCard.color) {

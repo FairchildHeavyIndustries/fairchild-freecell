@@ -59,10 +59,34 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         val sourceParent = findParentLayout(moveEvent.source)
         val destParent = findParentLayout(moveEvent.destination)
 
-        // Restore placeholder if the source was a free cell.
-        if (moveEvent.source.section == GameSection.FREECELL || moveEvent.source.section == GameSection.FOUNDATION) {
-            sourceParent.removeViewAt(moveEvent.source.columnIndex)
-            sourceParent.addView(createPlaceholderView(), moveEvent.source.columnIndex)
+        // First, remove all the moved card views from their current parent.
+        moveEvent.cards.forEach { card ->
+            val cardView = cardViewMap[card]
+            (cardView?.parent as? LinearLayout)?.removeView(cardView)
+        }
+
+        // Next, repair the source pile if it was a Free Cell or Foundation.
+        when (moveEvent.source.section) {
+            GameSection.FREECELL -> {
+                // An empty free cell always gets a placeholder.
+                sourceParent.addView(createPlaceholderView(), moveEvent.source.columnIndex)
+            }
+            GameSection.FOUNDATION -> {
+                val movedCard = moveEvent.cards.first() // Undo from foundation is always a single card.
+                val sourceIndex = moveEvent.source.columnIndex
+
+                // If an Ace was moved, the pile is now empty.
+                if (movedCard.value == Value.ACE) {
+                    sourceParent.addView(createPlaceholderView(), sourceIndex)
+                } else {
+                    // Otherwise, deduce the card that was underneath.
+                    val rankUnderneath = Value.entries[movedCard.value.ordinal - 1]
+                    val cardUnderneath = Card(rankUnderneath, movedCard.suit)
+                    val viewUnderneath = cardViewMap[cardUnderneath]!!
+                    sourceParent.addView(viewUnderneath, sourceIndex)
+                }
+            }
+            else -> { /* Board piles don't need special repair */ }
         }
 
         // Move each card's view.
