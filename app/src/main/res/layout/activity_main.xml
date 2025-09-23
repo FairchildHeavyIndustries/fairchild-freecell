@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0A6328"
@@ -28,7 +29,7 @@
         app:layout_constraintTop_toTopOf="parent">
     </LinearLayout>
     <LinearLayout
-        android:id="@+id/tableauLayout"
+        android:id="@+id/boardLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="26dp"
@@ -40,14 +41,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/freeCellLayout">
 
-        <LinearLayout android:id="@+id/tableauColumn1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
-        <LinearLayout android:id="@+id/tableauColumn2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
-        <LinearLayout android:id="@+id/tableauColumn3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
-        <LinearLayout android:id="@+id/tableauColumn4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
-        <LinearLayout android:id="@+id/tableauColumn5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
-        <LinearLayout android:id="@+id/tableauColumn6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
-        <LinearLayout android:id="@+id/tableauColumn7" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
-        <LinearLayout android:id="@+id/tableauColumn8" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/boardColumn1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/boardColumn2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/boardColumn3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/boardColumn4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/boardColumn5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/boardColumn6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/boardColumn7" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/boardColumn8" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical"/>
     </LinearLayout>
 
     <TextView
@@ -57,7 +58,7 @@
         android:textColor="#80FFFFFF"
         android:textSize="14sp"
         android:textStyle="italic"
-        app:layout_constraintBottom_toTopOf="@+id/tableauLayout"
+        app:layout_constraintBottom_toTopOf="@+id/boardLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/freeCellLayout"

@@ -1,43 +1,42 @@
 package com.example.fairchildfreecell
 
 import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isNotEmpty
-
-
 import kotlin.math.roundToInt
-
+import androidx.core.graphics.createBitmap
 
 class GameView(private val activity: Activity, private val gameActions: GameActions) {
 
     private val cardViewMap = mutableMapOf<Card, View>()
+    private val rootLayout = activity.findViewById<ConstraintLayout>(R.id.rootLayout)
     private val freeCellLayout = activity.findViewById<LinearLayout>(R.id.freeCellLayout)
     private val foundationLayout = activity.findViewById<LinearLayout>(R.id.foundationLayout)
     private var restartButton: ImageButton = activity.findViewById(R.id.restartButton)
     private var undoButton: ImageButton = activity.findViewById(R.id.undoButton)
-
     private var cardWidth = 0
     private var cardHeight = 0
-
-    // A list of the actual resource IDs for our tableau columns
     private val boardColumnIds = listOf(
-        R.id.tableauColumn1, R.id.tableauColumn2, R.id.tableauColumn3, R.id.tableauColumn4,
-        R.id.tableauColumn5, R.id.tableauColumn6, R.id.tableauColumn7, R.id.tableauColumn8
+        R.id.boardColumn1, R.id.boardColumn2, R.id.boardColumn3, R.id.boardColumn4,
+        R.id.boardColumn5, R.id.boardColumn6, R.id.boardColumn7, R.id.boardColumn8
     )
 
     init {
         hideSystemUI()
         restartButton.setOnClickListener {
-            gameActions.onRestartClicked() // Call the interface method
+            gameActions.onRestartClicked()
         }
         undoButton.setOnClickListener {
             gameActions.onUndoClicked()
@@ -55,70 +54,138 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         drawGameNumber(gameState.gameNumber)
     }
 
-    fun updateViewForMove(moveEvent: MoveEvent, onCardTap: (Card, GameSection, Int) -> Unit) {
-        val sourceParent = findParentLayout(moveEvent.source)
-        val destParent = findParentLayout(moveEvent.destination)
+    fun animateMove(moveEvent: MoveEvent, onCardTap: (Card, GameSection, Int) -> Unit) {
+        val topCardOfStack = moveEvent.cards.last()
+        val originalView = cardViewMap[topCardOfStack] ?: return
 
-        // First, remove all the moved card views from their current parent.
+        val startCoords = getStartCoordinates(originalView)
+        prepareLayoutsForAnimation(moveEvent)
+        val endCoords = getDestinationCoordinates(moveEvent)
+
+        // 2. Create a bitmap copy of the original view.
+        val bitmap = createBitmapFromView(originalView)
+        val ghostView = ImageView(activity)
+        ghostView.setImageBitmap(bitmap)
+        ghostView.layoutParams = ConstraintLayout.LayoutParams(originalView.width, originalView.height)
+
+        // 3. Add the ghost to the root layout at the starting position.
+        rootLayout.addView(ghostView)
+        ghostView.x = startCoords[0].toFloat()
+        ghostView.y = startCoords[1].toFloat()
+
+        // 4. Make the original view invisible during the animation.
+        originalView.visibility = View.INVISIBLE
+
+        // 5. Animate the ghost view.
+        ghostView.animate()
+            .x(endCoords[0].toFloat())
+            .y(endCoords[1].toFloat())
+            .setDuration(250)
+            .withEndAction {
+                // 6. Animation is over: clean up.
+                rootLayout.removeView(ghostView) // Remove the copy.
+                finalizeMove(moveEvent) // Place the real view in its final spot.
+                originalView.visibility = View.VISIBLE // Make the real view visible again.
+                updateClickListeners(moveEvent, onCardTap)
+            }
+            .start()
+        // --- END OF FIX ---
+    }
+    private fun createBitmapFromView(view: View): Bitmap {
+        view.measure(
+            View.MeasureSpec.makeMeasureSpec(view.width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(view.height, View.MeasureSpec.EXACTLY)
+        )
+        val bitmap = createBitmap(view.measuredWidth, view.measuredHeight)
+        val canvas = Canvas(bitmap)
+        view.layout(0, 0, view.measuredWidth, view.measuredHeight)
+        view.draw(canvas)
+        return bitmap
+    }
+    private fun getStartCoordinates(view: View): IntArray {
+        val startCoordinates = IntArray(2)
+        view.getLocationOnScreen(startCoordinates)
+        return startCoordinates
+    }
+
+    private fun getDestinationCoordinates(moveEvent: MoveEvent): IntArray {
+        val destParent = findParentLayout(moveEvent.destination)
+        val destinationCoordinates = IntArray(2)
+        val targetView: View
+
+        when (moveEvent.destination.section) {
+            GameSection.BOARD -> {
+                targetView = if (destParent.isNotEmpty()) {
+                    destParent.getChildAt(destParent.childCount - 1)
+                } else {
+                    destParent
+                }
+                targetView.getLocationOnScreen(destinationCoordinates)
+                if (destParent.isNotEmpty()) {
+                    // Offset to simulate stacking on top.
+                    destinationCoordinates[1] += (targetView.height * 0.35).roundToInt()
+                }
+            }
+            GameSection.FREECELL, GameSection.FOUNDATION -> {
+                targetView = destParent.getChildAt(moveEvent.destination.columnIndex)
+                targetView.getLocationOnScreen(destinationCoordinates)
+            }
+        }
+        return destinationCoordinates
+    }
+
+    private fun prepareLayoutsForAnimation(moveEvent: MoveEvent) {
+        // Remove all moved cards from their source parent to make way for the animation.
         moveEvent.cards.forEach { card ->
             val cardView = cardViewMap[card]
             (cardView?.parent as? LinearLayout)?.removeView(cardView)
         }
 
-        // Next, repair the source pile if it was a Free Cell or Foundation.
+        // Repair the source pile if it was a Free Cell or Foundation to show what's underneath.
         when (moveEvent.source.section) {
             GameSection.FREECELL -> {
-                // An empty free cell always gets a placeholder.
+                val sourceParent = findParentLayout(moveEvent.source)
                 sourceParent.addView(createPlaceholderView(), moveEvent.source.columnIndex)
             }
             GameSection.FOUNDATION -> {
-                val movedCard = moveEvent.cards.first() // Undo from foundation is always a single card.
-                val sourceIndex = moveEvent.source.columnIndex
-
-                // If an Ace was moved, the pile is now empty.
+                val sourceParent = findParentLayout(moveEvent.source)
+                val movedCard = moveEvent.cards.first()
                 if (movedCard.value == Value.ACE) {
-                    sourceParent.addView(createPlaceholderView(), sourceIndex)
+                    sourceParent.addView(createPlaceholderView(), moveEvent.source.columnIndex)
                 } else {
-                    // Otherwise, deduce the card that was underneath.
-                    val rankUnderneath = Value.entries[movedCard.value.ordinal - 1]
-                    val cardUnderneath = Card(rankUnderneath, movedCard.suit)
+                    val valueUnderneath = Value.entries[movedCard.value.ordinal - 1]
+                    val cardUnderneath = Card(valueUnderneath, movedCard.suit)
                     val viewUnderneath = cardViewMap[cardUnderneath]!!
-                    sourceParent.addView(viewUnderneath, sourceIndex)
+                    sourceParent.addView(viewUnderneath, moveEvent.source.columnIndex)
                 }
             }
-            else -> { /* Board piles don't need special repair */ }
+            else -> {}
         }
+    }
 
-        // Move each card's view.
+    private fun finalizeMove(moveEvent: MoveEvent) {
+        val destParent = findParentLayout(moveEvent.destination)
+        // Add all moved cards (including the one that was animated) to the final destination layout.
         moveEvent.cards.forEach { card ->
-            val cardView = cardViewMap[card] ?: return@forEach
-            val parent = cardView.parent as? LinearLayout
-            parent?.removeView(cardView)
-
-            // Reset margins before adding to a new parent.
-            val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
-            layoutParams.topMargin = 0
-
-            // Apply new margins if moving to a board pile.
+            val cardView = cardViewMap[card]!!
+            // Reset view properties before re-parenting.
+            cardView.x = 0f
+            cardView.y = 0f
+            val newLayoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
             if (moveEvent.destination.section == GameSection.BOARD && destParent.isNotEmpty()) {
-                layoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
+                newLayoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
             }
-            cardView.layoutParams = layoutParams
+            cardView.layoutParams = newLayoutParams
 
             when (moveEvent.destination.section) {
-                GameSection.BOARD -> {
-                    destParent.addView(cardView)
-                }
-
+                GameSection.BOARD -> destParent.addView(cardView)
                 GameSection.FREECELL, GameSection.FOUNDATION -> {
-                    // Replace the placeholder at the destination index.
                     val destIndex = moveEvent.destination.columnIndex
                     destParent.removeViewAt(destIndex)
                     destParent.addView(cardView, destIndex)
                 }
             }
         }
-        updateClickListeners(moveEvent, onCardTap)
     }
 
     private fun hideSystemUI() {
@@ -148,9 +215,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         // Get the width of the screen in pixels
         val screenWidth = activity.resources.displayMetrics.widthPixels
 
-        // We have 8 columns. Let's assume a small 4dp margin on each side of the tableau
-        val tableauPadding = (8 * activity.resources.displayMetrics.density).roundToInt()
-        val availableWidth = screenWidth - tableauPadding
+        // We have 8 columns. Let's assume a small 4dp margin on each side of the board
+        val boardPadding = (8 * activity.resources.displayMetrics.density).roundToInt()
+        val availableWidth = screenWidth - boardPadding
 
         // Calculate the width for a single card to fit 8 across
         cardWidth = availableWidth / 8
