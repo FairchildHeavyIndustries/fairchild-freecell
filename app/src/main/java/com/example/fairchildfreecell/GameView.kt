@@ -11,12 +11,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isNotEmpty
 import kotlin.math.roundToInt
-import androidx.core.graphics.createBitmap
 
 class GameView(private val activity: Activity, private val gameActions: GameActions) {
 
@@ -58,38 +58,72 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         val topCardOfStack = moveEvent.cards.last()
         val originalView = cardViewMap[topCardOfStack] ?: return
 
-        val startCoords = getStartCoordinates(originalView)
+        val startCoordinates = getStartCoordinates(originalView)
         prepareLayoutsForAnimation(moveEvent)
-        val endCoords = getDestinationCoordinates(moveEvent)
+        val destinationCoordinates = getDestinationCoordinates(moveEvent)
 
-        // 2. Create a bitmap copy of the original view.
-        val bitmap = createBitmapFromView(originalView)
+        val viewToAnimate: View
+        val isStack = moveEvent.cards.size > 1
+
+        if (isStack) {
+            // Create a container for the stack of cards
+            val stackContainer = LinearLayout(activity)
+            stackContainer.orientation = LinearLayout.VERTICAL
+
+            // Add all the cards in the stack to the container
+            moveEvent.cards.forEachIndexed { index, card ->
+                val cardView = cardViewMap[card]!!
+                (cardView.parent as? android.view.ViewGroup)?.removeView(cardView) // Detach from old parent
+                val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
+                if (index > 0) {
+                    layoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
+                }
+                cardView.layoutParams = layoutParams
+                stackContainer.addView(cardView)
+            }
+            val stackHeight = (cardHeight + (moveEvent.cards.size - 1) * (cardHeight * 0.35)).toInt()
+            stackContainer.measure(
+                View.MeasureSpec.makeMeasureSpec(cardWidth, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(stackHeight, View.MeasureSpec.EXACTLY)
+            )
+            stackContainer.layout(0, 0, cardWidth, stackHeight)
+            viewToAnimate = stackContainer
+        } else {
+            viewToAnimate = originalView
+        }
+
+        // Create a bitmap copy of the view to animate.
+        val bitmap = createBitmapFromView(viewToAnimate)
         val ghostView = ImageView(activity)
         ghostView.setImageBitmap(bitmap)
-        ghostView.layoutParams = ConstraintLayout.LayoutParams(originalView.width, originalView.height)
+        ghostView.layoutParams = ConstraintLayout.LayoutParams(bitmap.width, bitmap.height)
+
 
         // 3. Add the ghost to the root layout at the starting position.
         rootLayout.addView(ghostView)
-        ghostView.x = startCoords[0].toFloat()
-        ghostView.y = startCoords[1].toFloat()
+        ghostView.x = startCoordinates[0].toFloat()
+        ghostView.y = startCoordinates[1].toFloat()
 
-        // 4. Make the original view invisible during the animation.
-        originalView.visibility = View.INVISIBLE
+        // 4. Make the original view(s) invisible during the animation.
+        moveEvent.cards.forEach { card ->
+            cardViewMap[card]?.visibility = View.INVISIBLE
+        }
 
         // 5. Animate the ghost view.
         ghostView.animate()
-            .x(endCoords[0].toFloat())
-            .y(endCoords[1].toFloat())
+            .x(destinationCoordinates[0].toFloat())
+            .y(destinationCoordinates[1].toFloat())
             .setDuration(250)
             .withEndAction {
                 // 6. Animation is over: clean up.
                 rootLayout.removeView(ghostView) // Remove the copy.
                 finalizeMove(moveEvent) // Place the real view in its final spot.
-                originalView.visibility = View.VISIBLE // Make the real view visible again.
+                moveEvent.cards.forEach { card ->
+                    cardViewMap[card]?.visibility = View.VISIBLE // Make the real view visible again.
+                }
                 updateClickListeners(moveEvent, onCardTap)
             }
             .start()
-        // --- END OF FIX ---
     }
     private fun createBitmapFromView(view: View): Bitmap {
         view.measure(
@@ -171,6 +205,11 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             // Reset view properties before re-parenting.
             cardView.x = 0f
             cardView.y = 0f
+            cardView.translationX = 0f
+            cardView.translationY = 0f
+
+            (cardView.parent as? android.view.ViewGroup)?.removeView(cardView)
+
             val newLayoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
             if (moveEvent.destination.section == GameSection.BOARD && destParent.isNotEmpty()) {
                 newLayoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
