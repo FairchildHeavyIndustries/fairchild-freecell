@@ -28,19 +28,23 @@ class GameState {
         testState.foundationPiles.values.flatten().forEach { foundation.add(it) }
     }
 
-    fun moveCard(clickedCard: Card, sourceSection: GameSection, sourceColumn: Int): MoveEvent? {
+    fun moveCard(clickedCard: Card, sourceSection: GameSection, sourceColumn: Int): List<MoveEvent> {
+        val allMoveEvents = mutableListOf<MoveEvent>()
         val stackToMove = getStackToMove(clickedCard, sourceSection, sourceColumn)
-        if (stackToMove.isEmpty() || !isStackValid(stackToMove)) {
-            return null
+        if (stackToMove.isNotEmpty() && isStackValid(stackToMove)) {
+            val sourceLocation = CardLocation(sourceSection, sourceColumn)
+            val destination = findBestMove(stackToMove, sourceLocation)
+            if (destination != null) {
+                val moveEvent = MoveEvent(stackToMove, sourceLocation, destination)
+                performMove(moveEvent)
+                allMoveEvents.add(moveEvent)
+            }
         }
-
-        val sourceLocation = CardLocation(sourceSection, sourceColumn)
-        val destination = findBestMove(stackToMove, sourceLocation) ?: return null
-
-        val moveEvent = MoveEvent(stackToMove, sourceLocation, destination)
-        performMove(moveEvent)
-        moveHistory.add(moveEvent)
-        return moveEvent
+        if (allMoveEvents.isNotEmpty()){
+            allMoveEvents.addAll(autoMoveCardsToFoundation())
+            moveHistory.addAll(allMoveEvents)
+        }
+        return allMoveEvents
     }
 
     fun undoLastMove(): MoveEvent? {
@@ -51,7 +55,7 @@ class GameState {
         return undoEvent
     }
 
-    fun autoMoveCardsToFoundation(): List<MoveEvent> {
+    private fun autoMoveCardsToFoundation(): List<MoveEvent> {
         val autoMoves = mutableListOf<MoveEvent>()
         while (true) {
             val eligibleCards = foundation.getEligibleAutoMoveCards()

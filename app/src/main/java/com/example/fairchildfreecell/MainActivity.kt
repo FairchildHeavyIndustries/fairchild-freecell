@@ -23,19 +23,15 @@ class MainActivity : AppCompatActivity(), GameActions {
         val undoMoveEvent = gameState.undoLastMove()
 
         if (undoMoveEvent != null) {
-            gameView.animateMove(undoMoveEvent, this::onCardTapped)
+            gameView.animateMoves(listOf(undoMoveEvent), this::onCardTapped)
         }
     }
 
     private fun onCardTapped(card: Card, sourceSection: GameSection, column: Int) {
-        val moveEvent = gameState.moveCard(card, sourceSection, column)
-        if (moveEvent != null) {
-            gameView.animateMove(moveEvent, this::onCardTapped)
-            val autoMoves = gameState.autoMoveCardsToFoundation()
-            autoMoves.forEach {
-                gameView.animateMove(it, this::onCardTapped)
-            }
-        }
+        val allMoveEvents = gameState.moveCard(card, sourceSection, column)
+        if (allMoveEvents.isNotEmpty()) {
+            gameView.animateMoves(allMoveEvents, this::onCardTapped)
+           }
     }
 
     private fun refreshGameView() {

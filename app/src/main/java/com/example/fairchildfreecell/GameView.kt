@@ -3,6 +3,8 @@ package com.example.fairchildfreecell
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageButton
@@ -16,6 +18,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isNotEmpty
+import java.util.LinkedList
+import java.util.Queue
 import kotlin.math.roundToInt
 
 class GameView(private val activity: Activity, private val gameActions: GameActions) {
@@ -32,6 +36,10 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         R.id.boardColumn1, R.id.boardColumn2, R.id.boardColumn3, R.id.boardColumn4,
         R.id.boardColumn5, R.id.boardColumn6, R.id.boardColumn7, R.id.boardColumn8
     )
+
+    private val animationQueue: Queue<MoveEvent> = LinkedList()
+    private val animationHandler = Handler(Looper.getMainLooper())
+    private var onCardTapCallback: ((Card, GameSection, Int) -> Unit)? = null
 
     init {
         hideSystemUI()
@@ -54,7 +62,25 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         drawGameNumber(gameState.gameNumber)
     }
 
-    fun animateMove(moveEvent: MoveEvent, onCardTap: (Card, GameSection, Int) -> Unit) {
+    fun animateMoves(moves: List<MoveEvent>, onCardTap: (Card, GameSection, Int) -> Unit) {
+        onCardTapCallback = onCardTap
+        animationQueue.addAll(moves)
+        // If the queue was empty, start the animation process immediately.
+        if (animationQueue.size == moves.size) {
+            animateNextMoveInQueue()
+        }
+    }
+
+    private fun animateNextMoveInQueue() {
+        if (animationQueue.isNotEmpty()) {
+            val moveEvent = animationQueue.poll()
+            if (moveEvent != null) {
+                // The original animateMove function is now private and renamed.
+                performAnimation(moveEvent)
+            }
+        }
+    }
+    fun performAnimation(moveEvent: MoveEvent) {
         val topCardOfStack = moveEvent.cards.first()
         val originalView = cardViewMap[topCardOfStack] ?: return
 
@@ -115,13 +141,21 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             .y(destinationCoordinates[1].toFloat())
             .setDuration(250)
             .withEndAction {
-                // 6. Animation is over: clean up.
-                rootLayout.removeView(ghostView) // Remove the copy.
-                finalizeMove(moveEvent) // Place the real view in its final spot.
+                rootLayout.removeView(ghostView)
+                finalizeMove(moveEvent)
                 moveEvent.cards.forEach { card ->
-                    cardViewMap[card]?.visibility = View.VISIBLE // Make the real view visible again.
+                    cardViewMap[card]?.visibility = View.VISIBLE
                 }
-                updateClickListeners(moveEvent, onCardTap)
+                // Use the stored callback for updating click listeners.
+                updateClickListeners(moveEvent, onCardTapCallback!!)
+
+                // Check if there are more moves to animate.
+                if (animationQueue.isNotEmpty()) {
+                    // Post the next animation with a 300ms delay.
+                    animationHandler.postDelayed({
+                        animateNextMoveInQueue()
+                    }, 100)
+                }
             }
             .start()
     }
