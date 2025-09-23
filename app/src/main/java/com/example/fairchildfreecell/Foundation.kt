@@ -40,6 +40,9 @@ class Foundation {
         }
         return eligibleCards
     }
+    fun isFoundationComplete(): Boolean {
+        return pilesBySuit.values.sumOf { it.cards.size } == 52
+    }
 }
 class FoundationPile(val suit: Suit) {
     val cards = mutableListOf<Card>()

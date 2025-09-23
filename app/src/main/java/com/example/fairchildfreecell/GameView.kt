@@ -62,25 +62,25 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         drawGameNumber(gameState.gameNumber)
     }
 
-    fun animateMoves(moves: List<MoveEvent>, onCardTap: (Card, GameSection, Int) -> Unit) {
+    fun animateMoves(moves: List<MoveEvent>, fastDraw: Boolean = false, onCardTap: (Card, GameSection, Int) -> Unit) {
         onCardTapCallback = onCardTap
         animationQueue.addAll(moves)
         // If the queue was empty, start the animation process immediately.
         if (animationQueue.size == moves.size) {
-            animateNextMoveInQueue()
+            animateNextMoveInQueue(fastDraw)
         }
     }
 
-    private fun animateNextMoveInQueue() {
+    private fun animateNextMoveInQueue(fastDraw: Boolean = false) {
         if (animationQueue.isNotEmpty()) {
             val moveEvent = animationQueue.poll()
             if (moveEvent != null) {
                 // The original animateMove function is now private and renamed.
-                performAnimation(moveEvent)
+                performAnimation(moveEvent, fastDraw)
             }
         }
     }
-    fun performAnimation(moveEvent: MoveEvent) {
+    fun performAnimation(moveEvent: MoveEvent, fastDraw: Boolean = false) {
         val topCardOfStack = moveEvent.cards.first()
         val originalView = cardViewMap[topCardOfStack] ?: return
 
@@ -139,7 +139,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         ghostView.animate()
             .x(destinationCoordinates[0].toFloat())
             .y(destinationCoordinates[1].toFloat())
-            .setDuration(250)
+            .setDuration(if (fastDraw)  0 else 100)
             .withEndAction {
                 rootLayout.removeView(ghostView)
                 finalizeMove(moveEvent)
@@ -154,7 +154,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     // Post the next animation with a 300ms delay.
                     animationHandler.postDelayed({
                         animateNextMoveInQueue()
-                    }, 100)
+                    }, if (fastDraw)  0 else 100)
                 }
             }
             .start()

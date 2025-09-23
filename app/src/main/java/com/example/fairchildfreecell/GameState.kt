@@ -4,13 +4,17 @@ import kotlin.math.pow
 
 class GameState {
     val gameNumber: Int
-    val foundation = Foundation()
+    val isGameWon: Boolean
+        get() {
+            return foundation.isFoundationComplete()
+        }
+    private val foundation = Foundation()
     private val suitToIndexMap = Suit.entries.associateWith { it.ordinal }
 
     val boardPiles = mutableMapOf<Int, MutableList<Card>>()
-    val freeCellPiles = mutableMapOf<Int, Card?>()
+    private val freeCellPiles = mutableMapOf<Int, Card?>()
 
-    val moveHistory = mutableListOf<MoveEvent>()
+    private val moveHistory = mutableListOf<MoveEvent>()
 
     constructor(gameNumber: Int) {
         this.gameNumber = gameNumber
@@ -43,6 +47,7 @@ class GameState {
         if (allMoveEvents.isNotEmpty()){
             allMoveEvents.addAll(autoMoveCardsToFoundation())
             moveHistory.addAll(allMoveEvents)
+
         }
         return allMoveEvents
     }

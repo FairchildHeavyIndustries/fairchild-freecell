@@ -23,14 +23,15 @@ class MainActivity : AppCompatActivity(), GameActions {
         val undoMoveEvent = gameState.undoLastMove()
 
         if (undoMoveEvent != null) {
-            gameView.animateMoves(listOf(undoMoveEvent), this::onCardTapped)
+            gameView.animateMoves(listOf(undoMoveEvent), fastDraw = true,this::onCardTapped)
         }
     }
 
     private fun onCardTapped(card: Card, sourceSection: GameSection, column: Int) {
         val allMoveEvents = gameState.moveCard(card, sourceSection, column)
         if (allMoveEvents.isNotEmpty()) {
-            gameView.animateMoves(allMoveEvents, this::onCardTapped)
+//            gameView.animateMoves(allMoveEvents, true, this::onCardTapped)
+            gameView.animateMoves(allMoveEvents, gameState.isGameWon, this::onCardTapped)
            }
     }
 
@@ -45,10 +46,10 @@ class MainActivity : AppCompatActivity(), GameActions {
 
     private fun restartCurrentGame() {
 //                gameState = GameState(2)
-        if (currentGameNumber == 77777) {
-            gameState = GameState(TestGameStates.exampleState)
+        this.gameState = if (currentGameNumber == 77777) {
+            GameState(TestGameStates.exampleState)
         } else {
-            gameState = GameState(currentGameNumber)
+            GameState(currentGameNumber)
         }
         refreshGameView()
     }
