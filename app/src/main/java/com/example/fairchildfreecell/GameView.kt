@@ -158,7 +158,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         val suitTextView = cardView.findViewById<TextView>(R.id.suitTextView)
         val suitTopRightTextView = cardView.findViewById<TextView>(R.id.suitSmallTextView)
 
-        valueTextView.text = getRankString(card.rank)
+        valueTextView.text = getValueString(card.value)
         suitTextView.text = getSuitString(card.suit)
         suitTopRightTextView.text = getSuitString(card.suit)
 
@@ -242,13 +242,13 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         }
     }
 
-    private fun getRankString(rank: Rank): String {
-        return when (rank) {
-            Rank.ACE -> "A"
-            Rank.JACK -> "J"
-            Rank.QUEEN -> "Q"
-            Rank.KING -> "K"
-            else -> (rank.ordinal + 1).toString()
+    private fun getValueString(value: Value): String {
+        return when (value) {
+            Value.ACE -> "A"
+            Value.JACK -> "J"
+            Value.QUEEN -> "Q"
+            Value.KING -> "K"
+            else -> (value.ordinal + 1).toString()
         }
     }
 

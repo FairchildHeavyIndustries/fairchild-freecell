@@ -32,6 +32,10 @@ class MainActivity : AppCompatActivity(), GameActions {
         val moveEvent = gameState.moveCard(card, sourceSection, column)
         if (moveEvent != null) {
             gameView.updateViewForMove(moveEvent, this::onCardTapped)
+            val autoMoves = gameState.autoMoveCardsToFoundation()
+            autoMoves.forEach {
+                gameView.updateViewForMove(it, this::onCardTapped)
+            }
         }
     }
 

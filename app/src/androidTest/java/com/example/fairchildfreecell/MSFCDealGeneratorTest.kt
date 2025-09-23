@@ -15,7 +15,7 @@ class MSDealGeneratorTest {
     @Test
     fun getShuffledDeckFirstCardTest() {
         val shuffledDeck = MSDealGenerator.getShuffledDeck(1)
-        val firstCard = Card(Rank.JACK, Suit.DIAMONDS)
+        val firstCard = Card(Value.JACK, Suit.DIAMONDS)
 
 
         // ASSERT
@@ -26,7 +26,7 @@ class MSDealGeneratorTest {
     @Test
     fun getShuffledDeckLastCardTest() {
         val shuffledDeck = MSDealGenerator.getShuffledDeck(1)
-        val lastCard = Card(Rank.SIX, Suit.HEARTS)
+        val lastCard = Card(Value.SIX, Suit.HEARTS)
 
         // ASSERT
         // Check if the resulting shuffled integers match the expected sequence.
@@ -36,7 +36,7 @@ class MSDealGeneratorTest {
     @Test
     fun moveCardTest() {
         val gameState = GameState(TestGameStates.screenshotState)
-        val card = Card(Rank.SIX, Suit.DIAMONDS)
+        val card = Card(Value.SIX, Suit.DIAMONDS)
         val sourceSection = GameSection.BOARD
         val sourceColumn = 3
         val moveEvent = gameState.moveCard(card, sourceSection, sourceColumn)
