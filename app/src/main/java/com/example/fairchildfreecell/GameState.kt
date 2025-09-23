@@ -2,17 +2,31 @@ package com.example.fairchildfreecell
 
 import kotlin.math.pow
 
-class GameState(val gameNumber: Int) {
-    val boardPiles = mutableMapOf<Int, MutableList<Card>>()
-    val foundationPiles = mutableMapOf<Int, MutableList<Card>>()
-    val freeCellPiles = mutableMapOf<Int, Card?>()
+class GameState {
+    val gameNumber: Int
+    val boardPiles: MutableMap<Int, MutableList<Card>>
+    val foundationPiles: MutableMap<Int, MutableList<Card>>
+    val freeCellPiles: MutableMap<Int, Card?>
 
     private val moveHistory = mutableListOf<MoveEvent>()
 
-    init {
+    constructor(gameNumber: Int) {
+        this.gameNumber = gameNumber
+        boardPiles = mutableMapOf()
+        foundationPiles = mutableMapOf()
+        freeCellPiles = mutableMapOf()
         val deck = MSDealGenerator.getShuffledDeck(gameNumber)
         initializePiles()
         dealCards(deck)
+    }
+
+    // Secondary constructor for loading a predefined state for testing
+    constructor(testState: PresetGameState, gameNumber: Int = 0) {
+        this.gameNumber = gameNumber
+        // Create deep copies to prevent tests from modifying the base test state object
+        boardPiles = testState.boardPiles.mapValues { it.value.toMutableList() }.toMutableMap()
+        foundationPiles = testState.foundationPiles.mapValues { it.value.toMutableList() }.toMutableMap()
+        freeCellPiles = testState.freeCellPiles.toMutableMap()
     }
 
     private fun initializePiles() {
@@ -75,7 +89,7 @@ class GameState(val gameNumber: Int) {
     fun undoLastMove(): MoveEvent? {
         if (moveHistory.isEmpty()) return null
         val lastMove = moveHistory.removeAt(moveHistory.lastIndex)
-        val undoEvent = MoveEvent(lastMove.cards.reversed(), lastMove.destination, lastMove.source)
+        val undoEvent = MoveEvent(lastMove.cards, lastMove.destination, lastMove.source)
         performMove(undoEvent)
         return undoEvent
     }
@@ -115,7 +129,7 @@ class GameState(val gameNumber: Int) {
         }
 
         // Priority 2 & 3: Board and Free Cells
-        val bestBoardMove = findBestBoardMoveForStack(stackToMove, source.columnIndex)
+        val bestBoardMove = findBestBoardMoveForStack(stackToMove, source)
         val bestFreeCellMove = if (stackToMove.size == 1) findFirstEmptyFreecell() else null
 
         return when {
@@ -134,13 +148,13 @@ class GameState(val gameNumber: Int) {
             else -> null
         }
     }
-    private fun findBestBoardMoveForStack(stackToMove: List<Card>, sourcePileNum: Int): CardLocation? {
+    private fun findBestBoardMoveForStack(stackToMove: List<Card>, source: CardLocation): CardLocation? {
         val emptyFreeCells = freeCellPiles.values.count { it == null }
         val emptyBoardPiles = boardPiles.values.count { it.isEmpty() }
 
         val validDestinations = boardPiles.entries.filter { (pileNum, pile) ->
-            // A move is invalid if it's to the same pile.
-            if (pileNum == sourcePileNum) return@filter false
+            // A move is invalid if it's from a board to the same pile
+            if (source.section == GameSection.BOARD && pileNum == source.columnIndex) return@filter false
 
             // Determine the maximum number of cards that can be moved.
             val maxMoveSize = (1 + emptyFreeCells) * (2.0.pow(emptyBoardPiles)).toInt()

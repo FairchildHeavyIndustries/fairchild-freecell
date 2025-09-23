@@ -15,7 +15,7 @@ class MSDealGeneratorTest {
     @Test
     fun getShuffledDeckFirstCardTest() {
         val shuffledDeck = MSDealGenerator.getShuffledDeck(1)
-        val firstCard = Card(Suit.DIAMONDS, Rank.JACK)
+        val firstCard = Card(Rank.JACK, Suit.DIAMONDS)
 
 
         // ASSERT
@@ -26,19 +26,19 @@ class MSDealGeneratorTest {
     @Test
     fun getShuffledDeckLastCardTest() {
         val shuffledDeck = MSDealGenerator.getShuffledDeck(1)
-        val lastCard = Card(Suit.HEARTS, Rank.SIX)
+        val lastCard = Card(Rank.SIX, Suit.HEARTS)
 
         // ASSERT
         // Check if the resulting shuffled integers match the expected sequence.
-        assertEquals("The deck is incorrect.", lastCard, shuffledDeck[51] )
+        assertEquals("The deck is incorrect.",      lastCard, shuffledDeck[51] )
     }
 
     @Test
     fun moveCardTest() {
-        val gameState = GameState(1)
-        val card = Card(Suit.HEARTS, Rank.SIX)
+        val gameState = GameState(TestGameStates.screenshotState)
+        val card = Card(Rank.SIX, Suit.DIAMONDS)
         val sourceSection = GameSection.BOARD
-        val sourceColumn = 1
+        val sourceColumn = 3
         val moveEvent = gameState.moveCard(card, sourceSection, sourceColumn)
         assertNotNull(moveEvent)
 

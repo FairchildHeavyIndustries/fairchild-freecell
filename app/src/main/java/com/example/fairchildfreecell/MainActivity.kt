@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity(), GameActions {
     private fun restartCurrentGame() {
                 gameState = GameState(2)
         //gameState = GameState(currentGameNumber)
+//        gameState = GameState(TestGameStates.screenshotState)
         refreshGameView()
     }
 

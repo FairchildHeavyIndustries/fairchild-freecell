@@ -52,7 +52,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         val destParent = findParentLayout(moveEvent.destination)
 
         // Restore placeholder if the source was a free cell.
-        if (moveEvent.source.section == GameSection.FREECELL) {
+        if (moveEvent.source.section == GameSection.FREECELL || moveEvent.source.section == GameSection.FOUNDATION) {
             sourceParent.removeViewAt(moveEvent.source.columnIndex)
             sourceParent.addView(createPlaceholderView(), moveEvent.source.columnIndex)
         }
