@@ -29,47 +29,6 @@ class GameState {
         freeCellPiles = testState.freeCellPiles.toMutableMap()
     }
 
-    private fun initializePiles() {
-        for (i in 0..3) {
-            foundationPiles[i] = mutableListOf()
-            freeCellPiles[i] = null
-        }
-        for (i in 1..8) {
-            boardPiles[i] = mutableListOf()
-        }
-    }
-
-    private fun dealCards(deck: MutableList<Card>) {
-        // Correct round-robin dealing for Freecell
-        deck.forEachIndexed { i, card ->
-            val pileNum = (i % 8) + 1
-            boardPiles[pileNum]?.add(card)
-        }
-    }
-
-//    fun findBestMove(card: Card, sourceSection: GameSection): CardLocation? {
-//        // 1. Always prioritize moving to the foundation.
-//        findBestFoundationMove(card)?.let { return it }
-//
-//        // 2. If no foundation move is found, find the best possible tableau and free cell moves.
-//        val bestBoardMove = findBestBoardMove(card)
-//        val firstFreecell = findFirstEmptyFreecell()
-//
-//        // 3. Apply the priority rules to decide which move to return.
-//        return when {
-//            // If only one type of move is available, return it.
-//            bestBoardMove != null && firstFreecell == null -> bestBoardMove
-//            bestBoardMove == null && firstFreecell != null -> firstFreecell
-//
-//            // If both are available, apply the special rules.
-//            bestBoardMove != null && firstFreecell != null -> {
-//                if ((card.rank == Rank.KING) || (bestBoardMove.isEmpty && sourceSection == GameSection.FREECELL) || !bestBoardMove.isEmpty) {
-//                    bestBoardMove
-//                } else firstFreecell
-//            }
-//            else -> null
-//        }
-//    }
 
     fun moveCard(clickedCard: Card, sourceSection: GameSection, sourceColumn: Int): MoveEvent? {
         val stackToMove = getStackToMove(clickedCard, sourceSection, sourceColumn)
@@ -92,6 +51,69 @@ class GameState {
         val undoEvent = MoveEvent(lastMove.cards, lastMove.destination, lastMove.source)
         performMove(undoEvent)
         return undoEvent
+    }
+
+
+    private fun findBestMove(stackToMove: List<Card>, source: CardLocation): CardLocation? {
+        // Priority 1: Foundation (only for single cards)
+        if (stackToMove.size == 1) {
+            findBestFoundationMove(stackToMove.first())?.let { return it }
+        }
+
+        // Priority 2 & 3: Board and Free Cells
+        val bestBoardMove = findBestBoardMoveForStack(stackToMove, source)
+        val bestFreeCellMove = if (stackToMove.size == 1) findFirstEmptyFreecell() else null
+
+        return when {
+            bestBoardMove != null && bestFreeCellMove == null -> bestBoardMove
+            bestBoardMove == null && bestFreeCellMove != null -> bestFreeCellMove
+            bestBoardMove != null && bestFreeCellMove != null -> {
+                val isBoardMoveToEmptyPile = boardPiles[bestBoardMove.columnIndex]?.isEmpty() ?: false
+                if ((stackToMove.first().rank == Rank.KING) || (isBoardMoveToEmptyPile  && source.section == GameSection.FREECELL) || !isBoardMoveToEmptyPile ) {
+                    //if ((card.rank == Rank.KING) || (bestBoardMove.isEmpty && sourceSection == GameSection.FREECELL) || !bestBoardMove.isEmpty) {
+                    //if (!isBoardMoveToEmptyPile || cardToMove.rank == Rank.KING || source.section == GameSection.FREECELL)
+                    bestBoardMove
+                } else {
+                    bestFreeCellMove
+                }
+            }
+            else -> null
+        }
+    }
+    private fun findBestBoardMoveForStack(stackToMove: List<Card>, source: CardLocation): CardLocation? {
+        val emptyFreeCells = freeCellPiles.values.count { it == null }
+        val emptyBoardPiles = boardPiles.values.count { it.isEmpty() }
+
+        val validDestinations = boardPiles.entries.filter { (pileNum, pile) ->
+            // A move is invalid if it's from a board to the same pile
+            if (source.section == GameSection.BOARD && pileNum == source.columnIndex) return@filter false
+
+            // Determine the maximum number of cards that can be moved.
+            val maxMoveSize = (1 + emptyFreeCells) * (2.0.pow(emptyBoardPiles)).toInt()
+
+            // The move is invalid if the stack is too large.
+            if (stackToMove.size > maxMoveSize) return@filter false
+
+            // Check for valid placement (empty pile, or alternating color and sequential rank).
+            if (pile.isEmpty()) {
+                true
+            } else {
+                canStackOn(cardBelow = pile.last(), cardAbove = stackToMove.first())
+            }
+        }
+
+        // 2. From the list of valid moves, select the BEST one
+        val bestDestinationEntry = validDestinations.maxByOrNull {
+            // A lower score is better. Prioritize moves that uncover low-rank cards.
+            // Empty piles get a score of -1.
+            if (it.value.isEmpty()) -1 else it.value.minOf { c -> c.rank.ordinal }
+        }
+
+        // 3. Return the best destination as a CardLocation.
+        return bestDestinationEntry?.let {
+            CardLocation(GameSection.BOARD, it.key)
+        }
+
     }
 
     private fun performMove(moveEvent: MoveEvent) {
@@ -122,82 +144,16 @@ class GameState {
         }
     }
 
-    private fun findBestMove(stackToMove: List<Card>, source: CardLocation): CardLocation? {
-        // Priority 1: Foundation (only for single cards)
-        if (stackToMove.size == 1) {
-            findBestFoundationMove(stackToMove.first())?.let { return it }
-        }
-
-        // Priority 2 & 3: Board and Free Cells
-        val bestBoardMove = findBestBoardMoveForStack(stackToMove, source)
-        val bestFreeCellMove = if (stackToMove.size == 1) findFirstEmptyFreecell() else null
-
-        return when {
-            bestBoardMove != null && bestFreeCellMove == null -> bestBoardMove
-            bestBoardMove == null && bestFreeCellMove != null -> bestFreeCellMove
-            bestBoardMove != null && bestFreeCellMove != null -> {
-                val isBoardMoveToEmptyPile = boardPiles[bestBoardMove.columnIndex]?.isEmpty() ?: false
-                if ((stackToMove.first().rank == Rank.KING) || (isBoardMoveToEmptyPile  && source.section == GameSection.FREECELL) || !isBoardMoveToEmptyPile ) {
-                    //if ((card.rank == Rank.KING) || (bestBoardMove.isEmpty && sourceSection == GameSection.FREECELL) || !bestBoardMove.isEmpty) {
-                   //if (!isBoardMoveToEmptyPile || cardToMove.rank == Rank.KING || source.section == GameSection.FREECELL)
-                    bestBoardMove
-                } else {
-                    bestFreeCellMove
-                }
-            }
-            else -> null
-        }
-    }
-    private fun findBestBoardMoveForStack(stackToMove: List<Card>, source: CardLocation): CardLocation? {
-        val emptyFreeCells = freeCellPiles.values.count { it == null }
-        val emptyBoardPiles = boardPiles.values.count { it.isEmpty() }
-
-        val validDestinations = boardPiles.entries.filter { (pileNum, pile) ->
-            // A move is invalid if it's from a board to the same pile
-            if (source.section == GameSection.BOARD && pileNum == source.columnIndex) return@filter false
-
-            // Determine the maximum number of cards that can be moved.
-            val maxMoveSize = (1 + emptyFreeCells) * (2.0.pow(emptyBoardPiles)).toInt()
-
-            // The move is invalid if the stack is too large.
-            if (stackToMove.size > maxMoveSize) return@filter false
-
-            // Check for valid placement (empty pile, or alternating color and sequential rank).
-            if (pile.isEmpty()) {
-                true
-            } else {
-                val topCard = pile.last()
-                val bottomCardOfStack = stackToMove.first()
-                val destIsRed = topCard.suit in listOf(Suit.DIAMONDS, Suit.HEARTS)
-                val stackIsRed = bottomCardOfStack.suit in listOf(Suit.DIAMONDS, Suit.HEARTS)
-                destIsRed != stackIsRed && topCard.rank.ordinal == bottomCardOfStack.rank.ordinal + 1
-            }
-        }
-
-        // 2. From the list of valid moves, select the BEST one
-        val bestDestinationEntry = validDestinations.maxByOrNull {
-            // A lower score is better. Prioritize moves that uncover low-rank cards.
-            // Empty piles get a score of -1.
-            if (it.value.isEmpty()) -1 else it.value.minOf { c -> c.rank.ordinal }
-        }
-
-        // 3. Return the best destination as a CardLocation.
-        return bestDestinationEntry?.let {
-            CardLocation(GameSection.BOARD, it.key)
-        }
-
-    }
 
     private fun isStackValid(stack: List<Card>): Boolean {
         if (stack.size <= 1) return true
         for (i in 0 until stack.size - 1) {
-            val bottomCard = stack[i]
-            val topCard = stack[i + 1]
-            val bottomIsRed = bottomCard.suit in listOf(Suit.DIAMONDS, Suit.HEARTS)
-            val topIsRed = topCard.suit in listOf(Suit.DIAMONDS, Suit.HEARTS)
-            if (bottomIsRed == topIsRed || bottomCard.rank.ordinal != topCard.rank.ordinal + 1) return false
+            if (!canStackOn(cardBelow = stack[i], cardAbove = stack[i + 1])) return false
         }
         return true
+    }
+    private fun canStackOn(cardBelow: Card, cardAbove: Card): Boolean {
+        return cardBelow.color != cardAbove.color && cardBelow.rank.ordinal == cardAbove.rank.ordinal + 1
     }
     private fun findBestFoundationMove(card: Card): CardLocation? {
         val targetPileNum = if (card.rank == Rank.ACE) {
@@ -215,6 +171,25 @@ class GameState {
     private fun findFirstEmptyFreecell(): CardLocation? {
         return freeCellPiles.entries.find { it.value == null }?.key?.let {
             CardLocation(GameSection.FREECELL, it)
+        }
+    }
+
+
+    private fun initializePiles() {
+        for (i in 0..3) {
+            foundationPiles[i] = mutableListOf()
+            freeCellPiles[i] = null
+        }
+        for (i in 1..8) {
+            boardPiles[i] = mutableListOf()
+        }
+    }
+
+    private fun dealCards(deck: MutableList<Card>) {
+        // Correct round-robin dealing for Freecell
+        deck.forEachIndexed { i, card ->
+            val pileNum = (i % 8) + 1
+            boardPiles[pileNum]?.add(card)
         }
     }
 }

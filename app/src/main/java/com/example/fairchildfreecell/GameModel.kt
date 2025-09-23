@@ -20,11 +20,19 @@ data class MoveEvent(
     val source: CardLocation,
     val destination: CardLocation
 )
-
+enum class CardColor {
+    RED, BLACK
+}
 
 data class Card(
     val rank: Rank,
-    val suit: Suit)
+    val suit: Suit) {
+    val color: CardColor
+        get() =when (suit) {
+            Suit.HEARTS, Suit.DIAMONDS -> CardColor.RED
+            else -> CardColor.BLACK
+        }
+}
 
 data class PresetGameState(
     val freeCellPiles: Map<Int, Card?>,
@@ -47,7 +55,7 @@ object Deck {
 }
 object TestGameStates {
 
-    val screenshotState = PresetGameState(
+    val exampleState = PresetGameState(
         freeCellPiles = mapOf(
             0 to null,
             1 to Card(Rank.NINE, Suit.DIAMONDS),

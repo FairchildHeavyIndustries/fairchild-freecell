@@ -46,14 +46,13 @@ class MainActivity : AppCompatActivity(), GameActions {
 
     private fun restartCurrentGame() {
 //                gameState = GameState(2)
-        gameState = GameState(currentGameNumber)
-//        gameState = GameState(TestGameStates.screenshotState)
+        if (currentGameNumber == 77777) {
+            gameState = GameState(TestGameStates.exampleState)
+        } else {
+            gameState = GameState(currentGameNumber)
+        }
         refreshGameView()
     }
-
-
-
-
 
 
 }
