@@ -32,6 +32,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="26dp"
+        android:baselineAligned="false"
         android:orientation="horizontal"
         android:paddingStart="4dp"
         android:paddingEnd="4dp"
@@ -53,13 +54,13 @@
         android:id="@+id/gameNumberTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="184dp"
-        android:layout_marginBottom="796dp"
         android:textColor="#80FFFFFF"
         android:textSize="14sp"
         android:textStyle="italic"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tableauLayout"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/freeCellLayout"
         tools:text="11982" />
 
 
@@ -67,8 +68,8 @@
         android:id="@+id/undoButton"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="28dp"
+        android:layout_marginBottom="28dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/undo_move"
         android:src="@drawable/ic_undo"
@@ -80,13 +81,14 @@
         android:id="@+id/restartButton"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="12dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/restart_game"
         android:src="@drawable/ic_restart"
         app:layout_constraintBottom_toBottomOf="@id/undoButton"
         app:layout_constraintEnd_toStartOf="@id/undoButton"
         app:layout_constraintTop_toTopOf="@id/undoButton"
+        app:layout_constraintVertical_bias="0.0"
         app:tint="#FFFFFF" />
 
 
