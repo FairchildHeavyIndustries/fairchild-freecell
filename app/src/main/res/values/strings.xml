@@ -3,4 +3,5 @@
 
     <string name="restart_game">Restart Game</string>
     <string name="undo_move">Undo Move</string>
+    <string name="new_game">\"New Game\"</string>
 </resources>

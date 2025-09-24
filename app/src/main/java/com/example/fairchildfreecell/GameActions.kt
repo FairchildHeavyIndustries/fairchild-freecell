@@ -4,4 +4,5 @@ interface GameActions {
     fun onRestartClicked()
 
     fun onUndoClicked()
+    fun onNewGameClicked()
 }

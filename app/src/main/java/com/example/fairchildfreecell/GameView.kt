@@ -30,6 +30,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     private val foundationLayout = activity.findViewById<LinearLayout>(R.id.foundationLayout)
     private var restartButton: ImageButton = activity.findViewById(R.id.restartButton)
     private var undoButton: ImageButton = activity.findViewById(R.id.undoButton)
+    private var newGameButton: ImageButton = activity.findViewById(R.id.newGameButton)
     private var cardWidth = 0
     private var cardHeight = 0
     private val boardColumnIds = listOf(
@@ -48,6 +49,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         }
         undoButton.setOnClickListener {
             gameActions.onUndoClicked()
+        }
+        newGameButton.setOnClickListener {
+            gameActions.onNewGameClicked()
         }
         calculateCardDimensions()
     }
@@ -139,7 +143,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         ghostView.animate()
             .x(destinationCoordinates[0].toFloat())
             .y(destinationCoordinates[1].toFloat())
-            .setDuration(if (fastDraw)  0 else 100)
+            .setDuration(if (fastDraw)  10 else 250)
             .withEndAction {
                 rootLayout.removeView(ghostView)
                 finalizeMove(moveEvent)
@@ -154,7 +158,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     // Post the next animation with a 300ms delay.
                     animationHandler.postDelayed({
                         animateNextMoveInQueue()
-                    }, if (fastDraw)  0 else 100)
+                    }, if (fastDraw)  20L else 100L)
                 }
             }
             .start()

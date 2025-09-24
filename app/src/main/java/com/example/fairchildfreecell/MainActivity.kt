@@ -27,6 +27,10 @@ class MainActivity : AppCompatActivity(), GameActions {
         }
     }
 
+    override fun onNewGameClicked() {
+        startNewGame()
+    }
+
     private fun onCardTapped(card: Card, sourceSection: GameSection, column: Int) {
         val allMoveEvents = gameState.moveCard(card, sourceSection, column)
         if (allMoveEvents.isNotEmpty()) {

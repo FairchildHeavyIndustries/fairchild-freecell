@@ -91,6 +91,18 @@
         app:layout_constraintTop_toTopOf="@id/undoButton"
         app:layout_constraintVertical_bias="0.0"
         app:tint="#FFFFFF" />
+    <ImageButton
+        android:id="@+id/newGameButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="12dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/new_game"
+        android:src="@drawable/ic_add"
+        app:layout_constraintBottom_toBottomOf="@id/restartButton"
+        app:layout_constraintEnd_toStartOf="@id/restartButton"
+        app:layout_constraintTop_toTopOf="@id/restartButton"
+        app:tint="#FFFFFF" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
