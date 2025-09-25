@@ -32,9 +32,15 @@ data class MoveEvent(
     val source: CardLocation,
     val destination: CardLocation
 )
+
+enum class MoveQuality {
+    BEST, SECOND_BEST
+}
 enum class CardColor {
     RED, BLACK
 }
+
+
 
 
 

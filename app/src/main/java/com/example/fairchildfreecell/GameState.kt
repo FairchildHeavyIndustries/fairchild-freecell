@@ -32,12 +32,11 @@ class GameState {
         testState.foundationPiles.values.flatten().forEach { foundation.add(it) }
     }
 
-    fun moveCard(clickedCard: Card, sourceSection: GameSection, sourceColumn: Int): List<MoveEvent> {
+    fun moveCard(clickedCard: Card, sourceLocation: CardLocation, quality: MoveQuality): List<MoveEvent> {
         val allMoveEvents = mutableListOf<MoveEvent>()
-        val stackToMove = getStackToMove(clickedCard, sourceSection, sourceColumn)
+        val stackToMove = getStackToMove(clickedCard, sourceLocation)
         if (stackToMove.isNotEmpty() && isStackValid(stackToMove)) {
-            val sourceLocation = CardLocation(sourceSection, sourceColumn)
-            val destination = findBestMove(stackToMove, sourceLocation)
+            val destination = getDestinationLocation(stackToMove, sourceLocation, quality = quality)
             if (destination != null) {
                 val moveEvent = MoveEvent(stackToMove, sourceLocation, destination)
                 performMove(moveEvent)
@@ -51,6 +50,7 @@ class GameState {
         }
         return allMoveEvents
     }
+
 
     fun undoLastMove(): MoveEvent? {
         if (moveHistory.isEmpty()) return null
@@ -101,34 +101,37 @@ class GameState {
         return eligibleTopCards
     }
 
-    private fun findBestMove(stackToMove: List<Card>, source: CardLocation): CardLocation? {
-        // Priority 1: Foundation (only for single cards)
+    private fun getDestinationLocation(stackToMove: List<Card>, source: CardLocation, quality: MoveQuality): CardLocation? {
+        val rankedMoves = mutableListOf<CardLocation>()
         if (stackToMove.size == 1) {
-            findBestFoundationMove(stackToMove.first())?.let { return it }
+            findBestFoundationMove(stackToMove.first())?.let { bestFoundationMove ->
+                rankedMoves.add(bestFoundationMove)
+            }
         }
-
-        // Priority 2 & 3: Board and Free Cells
-        val bestBoardMove = findBestBoardMoveForStack(stackToMove, source)
+        val bestBoardMove = findBestBoardMove(stackToMove, source)
         val bestFreeCellMove = if (stackToMove.size == 1) findFirstEmptyFreecell() else null
 
-        return when {
-            bestBoardMove != null && bestFreeCellMove == null -> bestBoardMove
-            bestBoardMove == null && bestFreeCellMove != null -> bestFreeCellMove
+        when {
+            bestBoardMove != null && bestFreeCellMove == null -> rankedMoves.add(bestBoardMove)
+            bestBoardMove == null && bestFreeCellMove != null -> rankedMoves.add(bestFreeCellMove)
             bestBoardMove != null && bestFreeCellMove != null -> {
                 val isBoardMoveToEmptyPile =
                     boardPiles[bestBoardMove.columnIndex]?.isEmpty() ?: false
                 if ((stackToMove.first().value == Value.KING) || (isBoardMoveToEmptyPile && source.section == GameSection.FREECELL) || !isBoardMoveToEmptyPile) {
-                    bestBoardMove
+                    rankedMoves.add(bestBoardMove)
                 } else {
-                    bestFreeCellMove
+                    rankedMoves.add(bestFreeCellMove)
                 }
             }
-
+        }
+        return when {
+            quality == MoveQuality.BEST || rankedMoves.size == 1-> rankedMoves.firstOrNull()
+            quality == MoveQuality.SECOND_BEST && rankedMoves.size > 1 -> rankedMoves.getOrNull(1)
             else -> null
         }
     }
 
-    private fun findBestBoardMoveForStack(
+    private fun findBestBoardMove(
         stackToMove: List<Card>,
         source: CardLocation
     ): CardLocation? {
@@ -185,15 +188,15 @@ class GameState {
         }
     }
 
-    private fun getStackToMove(card: Card, section: GameSection, num: Int): List<Card> {
-        return when (section) {
+    private fun getStackToMove(card: Card, sourceLocation: CardLocation): List<Card> {
+        return when (sourceLocation.section) {
             GameSection.BOARD -> {
-                val pile = boardPiles[num] ?: return emptyList()
+                val pile = boardPiles[sourceLocation.columnIndex] ?: return emptyList()
                 val cardIndex = pile.indexOf(card)
                 if (cardIndex != -1) pile.subList(cardIndex, pile.size).toList() else emptyList()
             }
 
-            GameSection.FREECELL -> listOfNotNull(freeCellPiles[num])
+            GameSection.FREECELL -> listOfNotNull(freeCellPiles[sourceLocation.columnIndex])
             else -> emptyList()
         }
     }
@@ -247,4 +250,6 @@ class GameState {
             boardPiles[pileNum]?.add(card)
         }
     }
+
+
 }

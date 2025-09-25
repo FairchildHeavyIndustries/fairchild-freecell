@@ -24,7 +24,7 @@ import kotlin.math.roundToInt
 
 class GameView(private val activity: Activity, private val gameActions: GameActions) {
 
-    private val cardViewMap = mutableMapOf<Card, View>()
+       private val cardViewMap = mutableMapOf<Card, View>()
     private val rootLayout = activity.findViewById<ConstraintLayout>(R.id.rootLayout)
     private val freeCellLayout = activity.findViewById<LinearLayout>(R.id.freeCellLayout)
     private val foundationLayout = activity.findViewById<LinearLayout>(R.id.foundationLayout)
@@ -40,7 +40,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
     private val animationQueue: Queue<MoveEvent> = LinkedList()
     private val animationHandler = Handler(Looper.getMainLooper())
-    private var onCardTapCallback: ((Card, GameSection, Int) -> Unit)? = null
+    private var onCardTapCallback: ((Card, CardLocation) -> Unit)? = null
+    private var onCardDoubleTappedCallback: ((Card, CardLocation) -> Unit)? = null
+
 
     init {
         hideSystemUI()
@@ -58,7 +60,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
     fun drawNewGame(
         gameState: GameState,
-        onCardTap: (Card, GameSection, Int) -> Unit
+        onCardTap: (Card, CardLocation) -> Unit
     ) {
         cardViewMap.clear()
         drawTopLayouts()
@@ -66,8 +68,13 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         drawGameNumber(gameState.gameNumber)
     }
 
-    fun animateMoves(moves: List<MoveEvent>, fastDraw: Boolean = false, onCardTap: (Card, GameSection, Int) -> Unit) {
+    fun animateMoves(
+        moves: List<MoveEvent>,
+        fastDraw: Boolean = false,
+        onCardTap: (Card, CardLocation) -> Unit,
+        onCardDoubleTapped: (Card, CardLocation) -> Unit) {
         onCardTapCallback = onCardTap
+        onCardDoubleTappedCallback = onCardDoubleTapped
         animationQueue.addAll(moves)
         // If the queue was empty, start the animation process immediately.
         if (animationQueue.size == moves.size) {
@@ -84,7 +91,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             }
         }
     }
-    fun performAnimation(moveEvent: MoveEvent, fastDraw: Boolean = false) {
+    private fun performAnimation(moveEvent: MoveEvent, fastDraw: Boolean = false) {
         val topCardOfStack = moveEvent.cards.first()
         val originalView = cardViewMap[topCardOfStack] ?: return
 
@@ -281,7 +288,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         return placeholder
     }
 
-    private fun findParentLayout(location: CardLocation): LinearLayout {
+    fun findParentLayout(location: CardLocation): LinearLayout {
         return when (location.section) {
             GameSection.BOARD -> activity.findViewById(boardColumnIds[location.columnIndex - 1])
             GameSection.FREECELL -> freeCellLayout
@@ -343,17 +350,13 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
     private fun updateClickListeners(
         moveEvent: MoveEvent,
-        onCardTap: (Card, GameSection, Int) -> Unit
+        onCardTap: (Card, CardLocation) -> Unit
     ) {
         moveEvent.cards.forEach { card ->
             val cardView = cardViewMap[card] ?: return@forEach
             if (moveEvent.destination.section != GameSection.FOUNDATION) {
                 cardView.setOnClickListener {
-                    onCardTap(
-                        card,
-                        moveEvent.destination.section,
-                        moveEvent.destination.columnIndex
-                    )
+                    onCardTap( card,moveEvent.destination)
                 }
             } else {
                 cardView.setOnClickListener(null) // Foundation cards are not clickable.
@@ -367,11 +370,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 val exposedView = sourceParent.getChildAt(sourceParent.childCount - 1)
                 cardViewMap.entries.find { it.value == exposedView }?.key?.let { exposedCard ->
                     exposedView.setOnClickListener {
-                        onCardTap(
-                            exposedCard,
-                            GameSection.BOARD,
-                            moveEvent.source.columnIndex
-                        )
+                        onCardTap(exposedCard,moveEvent.source)
                     }
                 }
             }
@@ -382,7 +381,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         gameState: GameState,
         cardWidth: Int,
         cardHeight: Int,
-        onCardTap: (Card, GameSection, Int) -> Unit
+        onCardTap: (Card, CardLocation) -> Unit
     ) {
         boardColumnIds.forEachIndexed { index, columnId ->
             val pileNum = index + 1
@@ -404,7 +403,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 cardView.tag = card
 
                 // Every card gets a click listener.
-                cardView.setOnClickListener { onCardTap(card, GameSection.BOARD, pileNum) }
+                cardView.setOnClickListener { onCardTap(card, CardLocation(GameSection.BOARD, pileNum)) }
                 cardViewMap[card] = cardView
                 boardColumn.addView(cardView)
             }
