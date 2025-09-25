@@ -1,6 +1,8 @@
 package com.example.fairchildfreecell
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageButton
@@ -43,11 +45,12 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
     fun drawNewGame(
         gameState: GameState,
-        onCardTap: (Card, CardLocation) -> Unit
+        onCardTap: (Card, CardLocation) -> Unit,
+        onCardDoubleTapped: (Card, CardLocation) -> Unit
     ) {
         cardViewMap.clear()
         drawTopLayouts()
-        drawBoard(gameState, cardWidth, cardHeight, onCardTap)
+        drawBoard(gameState, cardWidth, cardHeight, onCardTap, onCardDoubleTapped)
         drawGameNumber(gameState.gameNumber)
     }
 
@@ -58,7 +61,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         onCardDoubleTapped: (Card, CardLocation) -> Unit
     ) {
         gameAnimator.animateMoves(moves, fastDraw) { moveEvent ->
-            updateClickListeners(moveEvent, onCardTap)
+            updateClickListeners(moveEvent, onCardTap, onCardDoubleTapped)
         }
     }
 
@@ -121,18 +124,27 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         suitTopRightTextView.setTextColor(color)
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun updateClickListeners(
         moveEvent: MoveEvent,
-        onCardTap: (Card, CardLocation) -> Unit
+        onCardTap: (Card, CardLocation) -> Unit,
+        onCardDoubleTapped: (Card, CardLocation) -> Unit
     ) {
         moveEvent.cards.forEach { card ->
             val cardView = cardViewMap[card] ?: return@forEach
             if (moveEvent.destination.section != GameSection.FOUNDATION) {
-                cardView.setOnClickListener {
-                    onCardTap(card, moveEvent.destination)
-                }
+                val location = moveEvent.destination
+                cardView.setOnClickListener { onCardTap(card, location) }
+                val gestureDetector = GestureDetector(activity, CardGestureListener(
+                    view = cardView,
+                    card = card,
+                    location = location,
+                    onDoubleClick = onCardDoubleTapped
+                ))
+                cardView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
             } else {
-                cardView.setOnClickListener(null) // Foundation cards are not clickable.
+                cardView.setOnClickListener(null)
+                cardView.setOnTouchListener(null)
             }
         }
 
@@ -142,19 +154,26 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             if (sourceParent.isNotEmpty()) {
                 val exposedView = sourceParent.getChildAt(sourceParent.childCount - 1)
                 cardViewMap.entries.find { it.value == exposedView }?.key?.let { exposedCard ->
-                    exposedView.setOnClickListener {
-                        onCardTap(exposedCard, moveEvent.source)
-                    }
+                    val location = moveEvent.source
+                    exposedView.setOnClickListener { onCardTap(exposedCard, location) }
+                    val gestureDetector = GestureDetector(activity, CardGestureListener(
+                        view = exposedView,
+                        card = exposedCard,
+                        location = location,
+                        onDoubleClick = onCardDoubleTapped
+                    ))
+                    exposedView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
                 }
             }
         }
     }
-
+    @SuppressLint("ClickableViewAccessibility")
     private fun drawBoard(
         gameState: GameState,
         cardWidth: Int,
         cardHeight: Int,
-        onCardTap: (Card, CardLocation) -> Unit
+        onCardTap: (Card, CardLocation) -> Unit,
+        onCardDoubleTapped: (Card, CardLocation) -> Unit
     ) {
         BOARD_COLUMN_IDS.forEachIndexed { index, columnId ->
             val pileNum = index + 1
@@ -176,13 +195,20 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 populateCardView(cardView, card)
                 cardView.tag = card
 
-                // Every card gets a click listener.
-                cardView.setOnClickListener {
-                    onCardTap(
-                        card,
-                        CardLocation(GameSection.BOARD, pileNum)
-                    )
-                }
+                val location = CardLocation(GameSection.BOARD, pileNum)
+
+                // Set standard click listener for single taps
+                cardView.setOnClickListener { onCardTap(card, location) }
+
+                // Set up GestureDetector for double taps and to trigger performClick
+                val gestureDetector = GestureDetector(activity, CardGestureListener(
+                    view = cardView,
+                    card = card,
+                    location = location,
+                    onDoubleClick = onCardDoubleTapped
+                ))
+                cardView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
+
                 cardViewMap[card] = cardView
                 boardColumn.addView(cardView)
             }

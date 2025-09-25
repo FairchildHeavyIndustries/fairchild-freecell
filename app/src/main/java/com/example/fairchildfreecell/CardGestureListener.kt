@@ -2,22 +2,26 @@ package com.example.fairchildfreecell
 
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.View
 
-private class CardGestureListener(
+internal class CardGestureListener(
+    private val view: View,
     private val card: Card,
-    private val section: GameSection,
-    private val column: Int,
-    private val onSingleClick: (Card, GameSection, Int) -> Unit,
-    private val onDoubleClick: (Card, GameSection, Int) -> Unit
+    private val location: CardLocation,
+    private val onDoubleClick: (Card, CardLocation) -> Unit
 ) : GestureDetector.SimpleOnGestureListener() {
 
+    override fun onDown(e: MotionEvent): Boolean {
+        return true
+    }
+
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-        onSingleClick(card, section, column)
+        view.performClick()
         return true
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        onDoubleClick(card, section, column)
+        onDoubleClick(card, location)
         return true
     }
 }

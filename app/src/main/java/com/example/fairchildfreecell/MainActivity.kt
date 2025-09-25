@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity(), GameActions {
 
 
     private fun refreshGameView() {
-        gameView.drawNewGame(gameState, this::onCardTapped)
+        gameView.drawNewGame(gameState, this::onCardTapped, this::onCardDoubleTapped)
     }
 
     private fun startNewGame() {
