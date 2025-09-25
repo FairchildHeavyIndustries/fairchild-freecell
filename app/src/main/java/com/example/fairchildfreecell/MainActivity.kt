@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity(), GameActions {
         val undoMoveEvent = gameState.undoLastMove()
 
         if (undoMoveEvent != null) {
-            gameView.animateMoves(listOf(undoMoveEvent), fastDraw = true,this::onCardTapped)
+            gameView.animateMoves(listOf(undoMoveEvent), fastDraw = false,this::onCardTapped)
         }
     }
 
@@ -34,7 +34,6 @@ class MainActivity : AppCompatActivity(), GameActions {
     private fun onCardTapped(card: Card, sourceSection: GameSection, column: Int) {
         val allMoveEvents = gameState.moveCard(card, sourceSection, column)
         if (allMoveEvents.isNotEmpty()) {
-//            gameView.animateMoves(allMoveEvents, true, this::onCardTapped)
             gameView.animateMoves(allMoveEvents, gameState.isGameWon, this::onCardTapped)
            }
     }

@@ -74,7 +74,6 @@ class GameState {
                     val destination = CardLocation(GameSection.FOUNDATION, suitToIndexMap[card.suit]!!)
                     val moveEvent = MoveEvent(listOf(card), source, destination)
                     performMove(moveEvent)
-                    moveHistory.add(moveEvent)
                     autoMoves.add(moveEvent)
 
             }
@@ -119,8 +118,6 @@ class GameState {
                 val isBoardMoveToEmptyPile =
                     boardPiles[bestBoardMove.columnIndex]?.isEmpty() ?: false
                 if ((stackToMove.first().value == Value.KING) || (isBoardMoveToEmptyPile && source.section == GameSection.FREECELL) || !isBoardMoveToEmptyPile) {
-                    //if ((card.value == Value.KING) || (bestBoardMove.isEmpty && sourceSection == GameSection.FREECELL) || !bestBoardMove.isEmpty) {
-                    //if (!isBoardMoveToEmptyPile || cardToMove.value == Value.KING || source.section == GameSection.FREECELL)
                     bestBoardMove
                 } else {
                     bestFreeCellMove

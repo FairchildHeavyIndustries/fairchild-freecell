@@ -228,6 +228,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     val valueUnderneath = Value.entries[movedCard.value.ordinal - 1]
                     val cardUnderneath = Card(valueUnderneath, movedCard.suit)
                     val viewUnderneath = cardViewMap[cardUnderneath]!!
+                    (viewUnderneath.parent as? android.view.ViewGroup)?.removeView(viewUnderneath)
                     sourceParent.addView(viewUnderneath, moveEvent.source.columnIndex)
                 }
             }
