@@ -1,31 +1,21 @@
 package com.example.fairchildfreecell
 
 import android.app.Activity
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.createBitmap
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isNotEmpty
-import java.util.LinkedList
-import java.util.Queue
 import kotlin.math.roundToInt
 
 class GameView(private val activity: Activity, private val gameActions: GameActions) {
 
-       private val cardViewMap = mutableMapOf<Card, View>()
-    private val rootLayout = activity.findViewById<ConstraintLayout>(R.id.rootLayout)
+    private val cardViewMap = mutableMapOf<Card, View>()
     private val freeCellLayout = activity.findViewById<LinearLayout>(R.id.freeCellLayout)
     private val foundationLayout = activity.findViewById<LinearLayout>(R.id.foundationLayout)
     private var restartButton: ImageButton = activity.findViewById(R.id.restartButton)
@@ -33,16 +23,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     private var newGameButton: ImageButton = activity.findViewById(R.id.newGameButton)
     private var cardWidth = 0
     private var cardHeight = 0
-    private val boardColumnIds = listOf(
-        R.id.boardColumn1, R.id.boardColumn2, R.id.boardColumn3, R.id.boardColumn4,
-        R.id.boardColumn5, R.id.boardColumn6, R.id.boardColumn7, R.id.boardColumn8
-    )
 
-    private val animationQueue: Queue<MoveEvent> = LinkedList()
-    private val animationHandler = Handler(Looper.getMainLooper())
-    private var onCardTapCallback: ((Card, CardLocation) -> Unit)? = null
-    private var onCardDoubleTappedCallback: ((Card, CardLocation) -> Unit)? = null
-
+    private val gameAnimator: GameAnimator
 
     init {
         hideSystemUI()
@@ -56,6 +38,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             gameActions.onNewGameClicked()
         }
         calculateCardDimensions()
+        gameAnimator = GameAnimator(activity, cardViewMap, cardWidth, cardHeight)
     }
 
     fun drawNewGame(
@@ -72,206 +55,13 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         moves: List<MoveEvent>,
         fastDraw: Boolean = false,
         onCardTap: (Card, CardLocation) -> Unit,
-        onCardDoubleTapped: (Card, CardLocation) -> Unit) {
-        onCardTapCallback = onCardTap
-        onCardDoubleTappedCallback = onCardDoubleTapped
-        animationQueue.addAll(moves)
-        // If the queue was empty, start the animation process immediately.
-        if (animationQueue.size == moves.size) {
-            animateNextMoveInQueue(fastDraw)
+        onCardDoubleTapped: (Card, CardLocation) -> Unit
+    ) {
+        gameAnimator.animateMoves(moves, fastDraw) { moveEvent ->
+            updateClickListeners(moveEvent, onCardTap)
         }
     }
 
-    private fun animateNextMoveInQueue(fastDraw: Boolean = false) {
-        if (animationQueue.isNotEmpty()) {
-            val moveEvent = animationQueue.poll()
-            if (moveEvent != null) {
-                // The original animateMove function is now private and renamed.
-                performAnimation(moveEvent, fastDraw)
-            }
-        }
-    }
-    private fun performAnimation(moveEvent: MoveEvent, fastDraw: Boolean = false) {
-        val topCardOfStack = moveEvent.cards.first()
-        val originalView = cardViewMap[topCardOfStack] ?: return
-
-        val startCoordinates = getStartCoordinates(originalView)
-        prepareLayoutsForAnimation(moveEvent)
-        val destinationCoordinates = getDestinationCoordinates(moveEvent)
-
-        val viewToAnimate: View
-        val isStack = moveEvent.cards.size > 1
-
-        if (isStack) {
-            // Create a container for the stack of cards
-            val stackContainer = LinearLayout(activity)
-            stackContainer.orientation = LinearLayout.VERTICAL
-
-            // Add all the cards in the stack to the container
-            moveEvent.cards.forEachIndexed { index, card ->
-                val cardView = cardViewMap[card]!!
-                (cardView.parent as? android.view.ViewGroup)?.removeView(cardView) // Detach from old parent
-                val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
-                if (index > 0) {
-                    layoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
-                }
-                cardView.layoutParams = layoutParams
-                stackContainer.addView(cardView)
-            }
-            val stackHeight = (cardHeight + (moveEvent.cards.size - 1) * (cardHeight * 0.35)).toInt()
-            stackContainer.measure(
-                View.MeasureSpec.makeMeasureSpec(cardWidth, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(stackHeight, View.MeasureSpec.EXACTLY)
-            )
-            stackContainer.layout(0, 0, cardWidth, stackHeight)
-            viewToAnimate = stackContainer
-        } else {
-            viewToAnimate = originalView
-        }
-
-        // Create a bitmap copy of the view to animate.
-        val bitmap = createBitmapFromView(viewToAnimate)
-        val ghostView = ImageView(activity)
-        ghostView.setImageBitmap(bitmap)
-        ghostView.layoutParams = ConstraintLayout.LayoutParams(bitmap.width, bitmap.height)
-
-
-        // 3. Add the ghost to the root layout at the starting position.
-        rootLayout.addView(ghostView)
-        ghostView.x = startCoordinates[0].toFloat()
-        ghostView.y = startCoordinates[1].toFloat()
-
-        // 4. Make the original view(s) invisible during the animation.
-        moveEvent.cards.forEach { card ->
-            cardViewMap[card]?.visibility = View.INVISIBLE
-        }
-
-        // 5. Animate the ghost view.
-        ghostView.animate()
-            .x(destinationCoordinates[0].toFloat())
-            .y(destinationCoordinates[1].toFloat())
-            .setDuration(if (fastDraw)  10 else 250)
-            .withEndAction {
-                rootLayout.removeView(ghostView)
-                finalizeMove(moveEvent)
-                moveEvent.cards.forEach { card ->
-                    cardViewMap[card]?.visibility = View.VISIBLE
-                }
-                // Use the stored callback for updating click listeners.
-                updateClickListeners(moveEvent, onCardTapCallback!!)
-
-                // Check if there are more moves to animate.
-                if (animationQueue.isNotEmpty()) {
-                    // Post the next animation with a 300ms delay.
-                    animationHandler.postDelayed({
-                        animateNextMoveInQueue()
-                    }, if (fastDraw)  20L else 100L)
-                }
-            }
-            .start()
-    }
-    private fun createBitmapFromView(view: View): Bitmap {
-        view.measure(
-            View.MeasureSpec.makeMeasureSpec(view.width, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(view.height, View.MeasureSpec.EXACTLY)
-        )
-        val bitmap = createBitmap(view.measuredWidth, view.measuredHeight)
-        val canvas = Canvas(bitmap)
-        view.layout(0, 0, view.measuredWidth, view.measuredHeight)
-        view.draw(canvas)
-        return bitmap
-    }
-    private fun getStartCoordinates(view: View): IntArray {
-        val startCoordinates = IntArray(2)
-        view.getLocationOnScreen(startCoordinates)
-        return startCoordinates
-    }
-
-    private fun getDestinationCoordinates(moveEvent: MoveEvent): IntArray {
-        val destParent = findParentLayout(moveEvent.destination)
-        val destinationCoordinates = IntArray(2)
-        val targetView: View
-
-        when (moveEvent.destination.section) {
-            GameSection.BOARD -> {
-                targetView = if (destParent.isNotEmpty()) {
-                    destParent.getChildAt(destParent.childCount - 1)
-                } else {
-                    destParent
-                }
-                targetView.getLocationOnScreen(destinationCoordinates)
-                if (destParent.isNotEmpty()) {
-                    // Offset to simulate stacking on top.
-                    destinationCoordinates[1] += (targetView.height * 0.35).roundToInt()
-                }
-            }
-            GameSection.FREECELL, GameSection.FOUNDATION -> {
-                targetView = destParent.getChildAt(moveEvent.destination.columnIndex)
-                targetView.getLocationOnScreen(destinationCoordinates)
-            }
-        }
-        return destinationCoordinates
-    }
-
-    private fun prepareLayoutsForAnimation(moveEvent: MoveEvent) {
-        // Remove all moved cards from their source parent to make way for the animation.
-        moveEvent.cards.forEach { card ->
-            val cardView = cardViewMap[card]
-            (cardView?.parent as? LinearLayout)?.removeView(cardView)
-        }
-
-        // Repair the source pile if it was a Free Cell or Foundation to show what's underneath.
-        when (moveEvent.source.section) {
-            GameSection.FREECELL -> {
-                val sourceParent = findParentLayout(moveEvent.source)
-                sourceParent.addView(createPlaceholderView(), moveEvent.source.columnIndex)
-            }
-            GameSection.FOUNDATION -> {
-                val sourceParent = findParentLayout(moveEvent.source)
-                val movedCard = moveEvent.cards.first()
-                if (movedCard.value == Value.ACE) {
-                    sourceParent.addView(createPlaceholderView(), moveEvent.source.columnIndex)
-                } else {
-                    val valueUnderneath = Value.entries[movedCard.value.ordinal - 1]
-                    val cardUnderneath = Card(valueUnderneath, movedCard.suit)
-                    val viewUnderneath = cardViewMap[cardUnderneath]!!
-                    (viewUnderneath.parent as? android.view.ViewGroup)?.removeView(viewUnderneath)
-                    sourceParent.addView(viewUnderneath, moveEvent.source.columnIndex)
-                }
-            }
-            else -> {}
-        }
-    }
-
-    private fun finalizeMove(moveEvent: MoveEvent) {
-        val destParent = findParentLayout(moveEvent.destination)
-        // Add all moved cards (including the one that was animated) to the final destination layout.
-        moveEvent.cards.forEach { card ->
-            val cardView = cardViewMap[card]!!
-            // Reset view properties before re-parenting.
-            cardView.x = 0f
-            cardView.y = 0f
-            cardView.translationX = 0f
-            cardView.translationY = 0f
-
-            (cardView.parent as? android.view.ViewGroup)?.removeView(cardView)
-
-            val newLayoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
-            if (moveEvent.destination.section == GameSection.BOARD && destParent.isNotEmpty()) {
-                newLayoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
-            }
-            cardView.layoutParams = newLayoutParams
-
-            when (moveEvent.destination.section) {
-                GameSection.BOARD -> destParent.addView(cardView)
-                GameSection.FREECELL, GameSection.FOUNDATION -> {
-                    val destIndex = moveEvent.destination.columnIndex
-                    destParent.removeViewAt(destIndex)
-                    destParent.addView(cardView, destIndex)
-                }
-            }
-        }
-    }
 
     private fun hideSystemUI() {
         WindowCompat.setDecorFitsSystemWindows(activity.window, false)
@@ -279,21 +69,6 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         controller.hide(WindowInsetsCompat.Type.systemBars())
         controller.systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    }
-
-    private fun createPlaceholderView(): ImageView {
-        val placeholder = ImageView(activity)
-        placeholder.setBackgroundResource(R.drawable.placeholder_background)
-        placeholder.layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
-        return placeholder
-    }
-
-    fun findParentLayout(location: CardLocation): LinearLayout {
-        return when (location.section) {
-            GameSection.BOARD -> activity.findViewById(boardColumnIds[location.columnIndex - 1])
-            GameSection.FREECELL -> freeCellLayout
-            GameSection.FOUNDATION -> foundationLayout
-        }
     }
 
     private fun calculateCardDimensions() {
@@ -316,15 +91,13 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         gameNumberTextView.text = "$gameNumber"
     }
 
-    // In GameView.kt
-
     private fun drawTopLayouts() {
         freeCellLayout.removeAllViews()
         foundationLayout.removeAllViews()
 
-        (0..3).forEach { i ->
-            freeCellLayout.addView(createPlaceholderView())
-            foundationLayout.addView(createPlaceholderView())
+        (0..3).forEach { _ ->
+            freeCellLayout.addView(createPlaceholderView(activity, cardWidth, cardHeight))
+            foundationLayout.addView(createPlaceholderView(activity, cardWidth, cardHeight))
         }
     }
 
@@ -356,7 +129,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             val cardView = cardViewMap[card] ?: return@forEach
             if (moveEvent.destination.section != GameSection.FOUNDATION) {
                 cardView.setOnClickListener {
-                    onCardTap( card,moveEvent.destination)
+                    onCardTap(card, moveEvent.destination)
                 }
             } else {
                 cardView.setOnClickListener(null) // Foundation cards are not clickable.
@@ -365,12 +138,12 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
         // Set listener on the newly exposed card in the source pile.
         if (moveEvent.source.section == GameSection.BOARD) {
-            val sourceParent = findParentLayout(moveEvent.source)
+            val sourceParent = findParentLayout(activity, moveEvent.source)
             if (sourceParent.isNotEmpty()) {
                 val exposedView = sourceParent.getChildAt(sourceParent.childCount - 1)
                 cardViewMap.entries.find { it.value == exposedView }?.key?.let { exposedCard ->
                     exposedView.setOnClickListener {
-                        onCardTap(exposedCard,moveEvent.source)
+                        onCardTap(exposedCard, moveEvent.source)
                     }
                 }
             }
@@ -383,7 +156,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         cardHeight: Int,
         onCardTap: (Card, CardLocation) -> Unit
     ) {
-        boardColumnIds.forEachIndexed { index, columnId ->
+        BOARD_COLUMN_IDS.forEachIndexed { index, columnId ->
             val pileNum = index + 1
             val boardColumn = activity.findViewById<LinearLayout>(columnId)
             boardColumn.removeAllViews()
@@ -391,7 +164,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             val pile = gameState.boardPiles[pileNum]
             pile?.forEach { card ->
                 val cardView =
-                    LayoutInflater.from(activity).inflate(R.layout.card_layout, boardColumn, false)
+                    LayoutInflater.from(activity)
+                        .inflate(R.layout.card_layout, boardColumn, false)
                 val layoutParams = cardView.layoutParams as LinearLayout.LayoutParams
                 layoutParams.width = cardWidth
                 layoutParams.height = cardHeight
@@ -403,7 +177,12 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 cardView.tag = card
 
                 // Every card gets a click listener.
-                cardView.setOnClickListener { onCardTap(card, CardLocation(GameSection.BOARD, pileNum)) }
+                cardView.setOnClickListener {
+                    onCardTap(
+                        card,
+                        CardLocation(GameSection.BOARD, pileNum)
+                    )
+                }
                 cardViewMap[card] = cardView
                 boardColumn.addView(cardView)
             }

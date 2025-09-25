@@ -39,6 +39,10 @@ enum class MoveQuality {
 enum class CardColor {
     RED, BLACK
 }
+val BOARD_COLUMN_IDS = listOf(
+    R.id.boardColumn1, R.id.boardColumn2, R.id.boardColumn3, R.id.boardColumn4,
+    R.id.boardColumn5, R.id.boardColumn6, R.id.boardColumn7, R.id.boardColumn8
+)
 
 
 
