@@ -67,11 +67,15 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         moves: List<MoveEvent>,
         fastDraw: Boolean = false,
         onCardTap: (Card, CardLocation) -> Unit,
-        onCardSwipedDown: (Card, CardLocation) -> Unit
+        onCardSwipedDown: (Card, CardLocation) -> Unit,
+        onAllMovesComplete: () -> Unit
     ) {
-        gameAnimator.animateMoves(moves, fastDraw) { moveEvent ->
-            updateClickListeners(moveEvent, onCardTap, onCardSwipedDown)
-        }
+        gameAnimator.animateMoves(
+            moves,
+            fastDraw,
+            { moveEvent -> updateClickListeners(moveEvent, onCardTap, onCardSwipedDown) },
+            onAllMovesComplete
+        )
     }
 
 

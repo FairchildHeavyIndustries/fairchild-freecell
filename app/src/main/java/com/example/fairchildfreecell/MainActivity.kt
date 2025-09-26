@@ -25,41 +25,23 @@ class MainActivity : AppCompatActivity(), GameActions {
     }
 
     override fun onCardTapped(card: Card, sourceLocation: CardLocation) {
-         val allMoveEvents = gameState.moveCard(
-            clickedCard = card,
-            sourceLocation = sourceLocation,
-            quality = MoveQuality.BEST
-        )
-        if (allMoveEvents.isNotEmpty()) {
-            gameView.animateMoves(
-                allMoveEvents,
-                gameState.isGameWon,
-                this::onCardTapped,
-                onCardSwipedDown = this::onCardSwipedDown
+        handleMove(
+            gameState.moveCard(
+                clickedCard = card,
+                sourceLocation = sourceLocation,
+                quality = MoveQuality.BEST
             )
-            if (gameState.isGameWon) {
-                gameView.setBottomButtonsEnabled(false)
-            }
-        }
+        )
     }
 
     override fun onCardSwipedDown(card: Card, sourceLocation: CardLocation) {
-        val allMoveEvents = gameState.moveCard(
-            clickedCard = card,
-            sourceLocation = sourceLocation,
-            quality = MoveQuality.SECOND_BEST
-        )
-        if (allMoveEvents.isNotEmpty()) {
-            gameView.animateMoves(
-                allMoveEvents,
-                gameState.isGameWon,
-                this::onCardTapped,
-                onCardSwipedDown = this::onCardSwipedDown
+        handleMove(
+            gameState.moveCard(
+                clickedCard = card,
+                sourceLocation = sourceLocation,
+                quality = MoveQuality.SECOND_BEST
             )
-            if (gameState.isGameWon) {
-                gameView.setBottomButtonsEnabled(false)
-            }
-        }
+        )
     }
 
     override fun onUndoClicked() {
@@ -71,18 +53,35 @@ class MainActivity : AppCompatActivity(), GameActions {
                 fastDraw = false,
                 this::onCardTapped,
                 onCardSwipedDown = this::onCardSwipedDown
-            )
+            ) {}
         }
     }
 
+    private fun handleMove(allMoveEvents: List<MoveEvent>) {
+        if (allMoveEvents.isNotEmpty()) {
+            if (gameState.isGameWon) {
+                gameView.setBottomButtonsEnabled(false)
+            }
+            gameView.animateMoves(
+                allMoveEvents,
+                gameState.isGameWon,
+                this::onCardTapped,
+                onCardSwipedDown = this::onCardSwipedDown
+            ) {
+                if (gameState.isGameWon) {
+                    gameView.setBottomButtonsEnabled(true)
+                }
+            }
+        }
+    }
 
     private fun refreshGameView() {
         gameView.drawNewGame(gameState, this::onCardTapped, this::onCardSwipedDown)
     }
 
     private fun startNewGame() {
-//        currentGameNumber = (1..32000).random()
-        currentGameNumber = 77777
+        currentGameNumber = (1..32000).random()
+//        currentGameNumber = 77777
         restartCurrentGame()
     }
 

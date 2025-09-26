@@ -26,13 +26,16 @@ class GameAnimator(
     private val animationQueue: Queue<MoveEvent> = LinkedList()
     private val animationHandler = Handler(Looper.getMainLooper())
     private var onMoveCompleteCallback: ((MoveEvent) -> Unit)? = null
+    private var onAllMovesCompleteCallback: (() -> Unit)? = null
 
     fun animateMoves(
         moves: List<MoveEvent>,
         fastDraw: Boolean = false,
-        onMoveComplete: (move: MoveEvent) -> Unit
+        onMoveComplete: (move: MoveEvent) -> Unit,
+        onAllMovesComplete: () -> Unit
     ) {
         this.onMoveCompleteCallback = onMoveComplete
+        this.onAllMovesCompleteCallback = onAllMovesComplete
         animationQueue.addAll(moves)
         // If the queue was empty, start the animation process immediately.
         if (animationQueue.size == moves.size) {
@@ -125,6 +128,8 @@ class GameAnimator(
                     animationHandler.postDelayed({
                         animateNextMoveInQueue(fastDraw)
                     }, if (fastDraw) 20L else 100L)
+                } else {
+                    onAllMovesCompleteCallback?.invoke()
                 }
             }
             .start()
