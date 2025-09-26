@@ -27,14 +27,14 @@ class MainActivity : AppCompatActivity(), GameActions {
     override fun onCardTapped(card: Card, sourceLocation: CardLocation) {
         val allMoveEvents = gameState.moveCard(clickedCard = card, sourceLocation = sourceLocation, quality = MoveQuality.BEST)
         if (allMoveEvents.isNotEmpty()) {
-            gameView.animateMoves(allMoveEvents, gameState.isGameWon, this::onCardTapped, onCardDoubleTapped = this::onCardDoubleTapped)
+            gameView.animateMoves(allMoveEvents, gameState.isGameWon, this::onCardTapped, onCardSwipedDown = this::onCardSwipedDown)
         }
     }
 
-    override fun onCardDoubleTapped(card: Card, sourceLocation: CardLocation) {
+    override fun onCardSwipedDown(card: Card, sourceLocation: CardLocation) {
         val allMoveEvents = gameState.moveCard(clickedCard = card, sourceLocation = sourceLocation, quality = MoveQuality.SECOND_BEST)
         if (allMoveEvents.isNotEmpty()) {
-            gameView.animateMoves(allMoveEvents, gameState.isGameWon, this::onCardTapped, onCardDoubleTapped = this::onCardDoubleTapped)
+            gameView.animateMoves(allMoveEvents, gameState.isGameWon, this::onCardTapped, onCardSwipedDown = this::onCardSwipedDown)
         }
     }
 
@@ -42,29 +42,28 @@ class MainActivity : AppCompatActivity(), GameActions {
         val undoMoveEvent = gameState.undoLastMove()
 
         if (undoMoveEvent != null) {
-            gameView.animateMoves(listOf(undoMoveEvent), fastDraw = false, this::onCardTapped, onCardDoubleTapped = this::onCardDoubleTapped)
+            gameView.animateMoves(listOf(undoMoveEvent), fastDraw = false, this::onCardTapped, onCardSwipedDown = this::onCardSwipedDown)
         }
     }
 
 
     private fun refreshGameView() {
-        gameView.drawNewGame(gameState, this::onCardTapped, this::onCardDoubleTapped)
+        gameView.drawNewGame(gameState, this::onCardTapped, this::onCardSwipedDown)
     }
 
     private fun startNewGame() {
-        currentGameNumber = (1..32000).random()
+        //currentGameNumber = (1..32000).random()
+        currentGameNumber = 77777
         restartCurrentGame()
     }
 
     private fun restartCurrentGame() {
 //                gameState = GameState(2)
         this.gameState = if (currentGameNumber == 77777) {
-            GameState(TestGameStates.exampleState)
+            GameState(testState = TestGameStates.kingsDownToAcesState)
         } else {
             GameState(currentGameNumber)
         }
         refreshGameView()
     }
-
-
 }

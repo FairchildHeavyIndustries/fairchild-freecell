@@ -110,7 +110,7 @@ class GameAnimator(
         ghostView.animate()
             .x(destinationCoordinates[0].toFloat())
             .y(destinationCoordinates[1].toFloat())
-            .setDuration(if (fastDraw) 10 else 250)
+            .setDuration(if (fastDraw) 100 else 250)
             .withEndAction {
                 rootLayout.removeView(ghostView)
                 finalizeMove(moveEvent)
