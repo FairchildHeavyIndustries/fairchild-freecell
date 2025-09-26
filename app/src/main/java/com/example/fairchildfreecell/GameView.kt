@@ -20,9 +20,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     private val cardViewMap = mutableMapOf<Card, View>()
     private val freeCellLayout = activity.findViewById<LinearLayout>(R.id.freeCellLayout)
     private val foundationLayout = activity.findViewById<LinearLayout>(R.id.foundationLayout)
-    private var restartButton: ImageButton = activity.findViewById(R.id.restartButton)
-    private var undoButton: ImageButton = activity.findViewById(R.id.undoButton)
-    private var newGameButton: ImageButton = activity.findViewById(R.id.newGameButton)
+    private var restartButton: ImageButton
+    private var undoButton: ImageButton
+    private var newGameButton: ImageButton
     private var cardWidth = 0
     private var cardHeight = 0
 
@@ -30,6 +30,9 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
 
     init {
         hideSystemUI()
+        restartButton = activity.findViewById(R.id.restartButton)
+        undoButton = activity.findViewById(R.id.undoButton)
+        newGameButton = activity.findViewById(R.id.newGameButton)
         restartButton.setOnClickListener {
             gameActions.onRestartClicked()
         }
@@ -41,6 +44,12 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         }
         calculateCardDimensions()
         gameAnimator = GameAnimator(activity, cardViewMap, cardWidth, cardHeight)
+    }
+
+    fun setBottomButtonsEnabled(isEnabled: Boolean) {
+        newGameButton.isEnabled = isEnabled
+        restartButton.isEnabled = isEnabled
+        undoButton.isEnabled = isEnabled
     }
 
     fun drawNewGame(
