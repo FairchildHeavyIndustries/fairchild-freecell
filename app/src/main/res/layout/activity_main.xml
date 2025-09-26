@@ -64,6 +64,39 @@
         app:layout_constraintTop_toBottomOf="@+id/freeCellLayout"
         tools:text="11982" />
 
+    <LinearLayout
+        android:id="@+id/moreOptionsMenu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="22dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+
+        app:layout_constraintBottom_toTopOf="@id/bottomButtonsLayout"
+        app:layout_constraintStart_toStartOf="@+id/bottomButtonsLayout"
+
+        app:layout_constraintHorizontal_bias="0.5"
+        >
+
+        <ImageButton
+            android:id="@+id/settingsButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/new_game"
+            android:src="@drawable/ic_settings"
+            app:tint="#FFFFFF" />
+        <ImageButton
+            android:id="@+id/helpButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/new_game"
+            android:src="@drawable/ic_help"
+            app:tint="#FFFFFF" />
+    </LinearLayout>
+
 
     <LinearLayout
         android:id="@+id/bottomButtonsLayout"
@@ -84,24 +117,6 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/new_game"
             android:src="@drawable/ic_more"
-            app:tint="#FFFFFF" />
-        <ImageButton
-            android:id="@+id/settingsButton"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/new_game"
-            android:src="@drawable/ic_settings"
-            app:tint="#FFFFFF" />
-        <ImageButton
-            android:id="@+id/hintButton"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/new_game"
-            android:src="@drawable/ic_help"
             app:tint="#FFFFFF" />
         <ImageButton
             android:id="@+id/saveGameButton"
@@ -131,17 +146,15 @@
             android:contentDescription="@string/restart_game"
             android:src="@drawable/ic_restart"
             app:tint="#FFFFFF" />
-
         <ImageButton
             android:id="@+id/undoButton"
             android:layout_width="0dp"
             android:layout_height="36dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/undo_move"
+            android:contentDescription="@string/restart_game"
             android:src="@drawable/ic_undo"
             app:tint="#FFFFFF" />
-
     </LinearLayout>
 
 

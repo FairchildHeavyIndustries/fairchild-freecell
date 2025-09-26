@@ -5,6 +5,12 @@ import android.app.Activity
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.View
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
+import android.view.animation.AnimationSet
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.TranslateAnimation
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -14,6 +20,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isNotEmpty
 import kotlin.math.roundToInt
+import androidx.core.view.isVisible
 
 class GameView(private val activity: Activity, private val gameActions: GameActions) {
 
@@ -23,6 +30,11 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     private var restartButton: ImageButton
     private var undoButton: ImageButton
     private var newGameButton: ImageButton
+    private var moreOptionsButton: ImageButton
+    private var settingsButton: ImageButton
+    private var hintButton: ImageButton
+    private var saveGameButton: ImageButton
+    private var moreOptionsMenu: LinearLayout
     private var cardWidth = 0
     private var cardHeight = 0
 
@@ -33,18 +45,58 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         restartButton = activity.findViewById(R.id.restartButton)
         undoButton = activity.findViewById(R.id.undoButton)
         newGameButton = activity.findViewById(R.id.newGameButton)
-        restartButton.setOnClickListener {
-            gameActions.onRestartClicked()
-        }
-        undoButton.setOnClickListener {
-            gameActions.onUndoClicked()
-        }
-        newGameButton.setOnClickListener {
-            gameActions.onNewGameClicked()
-        }
+        moreOptionsButton = activity.findViewById(R.id.moreOptionsButton)
+        settingsButton = activity.findViewById(R.id.settingsButton)
+        hintButton = activity.findViewById(R.id.helpButton)
+        saveGameButton = activity.findViewById(R.id.saveGameButton)
+        moreOptionsMenu = activity.findViewById(R.id.moreOptionsMenu)
+
+        restartButton.setOnClickListener { gameActions.onRestartClicked() }
+        undoButton.setOnClickListener { gameActions.onUndoClicked() }
+        newGameButton.setOnClickListener { gameActions.onNewGameClicked() }
+        moreOptionsButton.setOnClickListener { gameActions.onMoreOptionsTapped() }
+        settingsButton.setOnClickListener { gameActions.onSettingsTapped() }
+        hintButton.setOnClickListener { gameActions.onHelpTapped() }
+        saveGameButton.setOnClickListener { gameActions.onSaveGameTapped() }
+
         calculateCardDimensions()
         gameAnimator = GameAnimator(activity, cardViewMap, cardWidth, cardHeight)
     }
+
+    fun toggleMoreOptions() {
+        val animationDuration = 500L
+        if (moreOptionsMenu.isVisible) {
+            val slideDown = TranslateAnimation(0f, 0f, 0f, moreOptionsMenu.height.toFloat())
+            val fadeOut = AlphaAnimation(1f, 0f)
+            fadeOut.interpolator = DecelerateInterpolator(2f) // Starts fast, ends slow
+
+            val animationSet = AnimationSet(true)
+            animationSet.addAnimation(slideDown)
+            animationSet.addAnimation(fadeOut)
+            animationSet.duration = animationDuration
+            animationSet.setAnimationListener(object : Animation.AnimationListener {
+                override fun onAnimationStart(animation: Animation?) {}
+                override fun onAnimationEnd(animation: Animation?) {
+                    moreOptionsMenu.visibility = View.GONE
+                }
+
+                override fun onAnimationRepeat(animation: Animation?) {}
+            })
+            moreOptionsMenu.startAnimation(animationSet)
+        } else {
+            moreOptionsMenu.visibility = View.VISIBLE
+            val slideUp = TranslateAnimation(0f, 0f, moreOptionsMenu.height.toFloat(), 0f)
+            val fadeIn = AlphaAnimation(0f, 1f)
+            fadeIn.interpolator = AccelerateInterpolator(1f) // Starts slow, ends fast
+
+            val animationSet = AnimationSet(true)
+            animationSet.addAnimation(slideUp)
+            animationSet.addAnimation(fadeIn)
+            animationSet.duration = animationDuration
+            moreOptionsMenu.startAnimation(animationSet)
+        }
+    }
+
 
     fun setBottomButtonsEnabled(isEnabled: Boolean) {
         newGameButton.isEnabled = isEnabled

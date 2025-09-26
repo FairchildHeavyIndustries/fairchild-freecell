@@ -19,7 +19,6 @@ class MainActivity : AppCompatActivity(), GameActions {
         restartCurrentGame()
     }
 
-
     override fun onNewGameClicked() {
         startNewGame()
     }
@@ -55,6 +54,22 @@ class MainActivity : AppCompatActivity(), GameActions {
                 onCardSwipedDown = this::onCardSwipedDown
             ) {}
         }
+    }
+
+    override fun onMoreOptionsTapped() {
+        gameView.toggleMoreOptions()
+    }
+
+    override fun onSettingsTapped() {
+        // TODO: Implement settings screen
+    }
+
+    override fun onHelpTapped() {
+        // TODO: Implement help screen
+    }
+
+    override fun onSaveGameTapped() {
+        // TODO: Implement save game functionality
     }
 
     private fun handleMove(allMoveEvents: List<MoveEvent>) {
