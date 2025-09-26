@@ -52,13 +52,12 @@ class MainActivity : AppCompatActivity(), GameActions {
     }
 
     private fun startNewGame() {
-        //currentGameNumber = (1..32000).random()
-        currentGameNumber = 77777
+        currentGameNumber = (1..32000).random()
+//        currentGameNumber = 77777
         restartCurrentGame()
     }
 
     private fun restartCurrentGame() {
-//                gameState = GameState(2)
         this.gameState = if (currentGameNumber == 77777) {
             GameState(testState = TestGameStates.kingsDownToAcesState)
         } else {
