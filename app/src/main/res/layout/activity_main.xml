@@ -77,13 +77,49 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <ImageButton
+            android:id="@+id/moreOptionsButton"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/new_game"
+            android:src="@drawable/ic_more"
+            app:tint="#FFFFFF" />
+        <ImageButton
+            android:id="@+id/settingsButton"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/new_game"
+            android:src="@drawable/ic_settings"
+            app:tint="#FFFFFF" />
+        <ImageButton
+            android:id="@+id/hintButton"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/new_game"
+            android:src="@drawable/ic_help"
+            app:tint="#FFFFFF" />
+        <ImageButton
+            android:id="@+id/saveGameButton"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/new_game"
+            android:src="@drawable/ic_star"
+            app:tint="#FFFFFF" />
+        <ImageButton
             android:id="@+id/newGameButton"
             android:layout_width="0dp"
             android:layout_height="36dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/new_game"
-            android:src="@drawable/ic_add"
+            android:src="@drawable/ic_add2"
             app:tint="#FFFFFF" />
 
         <ImageButton
