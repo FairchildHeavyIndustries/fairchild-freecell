@@ -119,8 +119,10 @@ class GameState {
                     boardPiles[bestBoardMove.columnIndex]?.isEmpty() ?: false
                 if ((stackToMove.first().value == Value.KING) || (isBoardMoveToEmptyPile && source.section == GameSection.FREECELL) || !isBoardMoveToEmptyPile) {
                     rankedMoves.add(bestBoardMove)
+                    rankedMoves.add(bestFreeCellMove)
                 } else {
                     rankedMoves.add(bestFreeCellMove)
+                    rankedMoves.add(bestBoardMove)
                 }
             }
         }
