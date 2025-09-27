@@ -212,25 +212,6 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 cardView.setOnTouchListener(null)
             }
         }
-
-        // Set listener on the newly exposed card in the source pile.
-        if (moveEvent.source.section == GameSection.BOARD) {
-            val sourceParent = findParentLayout(activity, moveEvent.source)
-            if (sourceParent.isNotEmpty()) {
-                val exposedView = sourceParent.getChildAt(sourceParent.childCount - 1)
-                cardViewMap.entries.find { it.value == exposedView }?.key?.let { exposedCard ->
-                    val location = moveEvent.source
-                    exposedView.setOnClickListener { onCardTap(exposedCard, location) }
-                    val gestureDetector = GestureDetector(activity, CardGestureListener(
-                        view = exposedView,
-                        card = exposedCard,
-                        location = location,
-                        onSwipeDown = onCardSwipedDown
-                    ))
-                    exposedView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
-                }
-            }
-        }
     }
     @SuppressLint("ClickableViewAccessibility")
     private fun drawBoard(
