@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.createBitmap
 import androidx.core.view.isNotEmpty
+import com.example.fairchildfreecell.settings.SettingsManager
 import java.util.LinkedList
 import java.util.Queue
 import kotlin.math.roundToInt
@@ -75,7 +76,7 @@ class GameAnimator(
                 (cardView.parent as? android.view.ViewGroup)?.removeView(cardView) // Detach from old parent
                 val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
                 if (index > 0) {
-                    layoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
+                    layoutParams.topMargin = getBoardCardTopMargin(cardHeight)
                 }
                 cardView.layoutParams = layoutParams
                 stackContainer.addView(cardView)
@@ -168,7 +169,9 @@ class GameAnimator(
                 targetView.getLocationOnScreen(destinationCoordinates)
                 if (destParent.isNotEmpty()) {
                     // Offset to simulate stacking on top.
-                    destinationCoordinates[1] += (targetView.height * 0.35).roundToInt()
+//                    destinationCoordinates[1] += (targetView.height * 0.35).roundToInt()
+                    destinationCoordinates[1] +=  (targetView.height * (1 - SettingsManager.currentSettings.cardSpacing.overlapPercentage)).roundToInt()
+
                 }
             }
 
@@ -233,7 +236,7 @@ class GameAnimator(
 
             val newLayoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
             if (moveEvent.destination.section == GameSection.BOARD && destParent.isNotEmpty()) {
-                newLayoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
+                newLayoutParams.topMargin = getBoardCardTopMargin(cardHeight)
             }
             cardView.layoutParams = newLayoutParams
 

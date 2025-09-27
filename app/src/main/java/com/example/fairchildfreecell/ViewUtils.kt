@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.widget.ImageView
 import android.widget.LinearLayout
+import com.example.fairchildfreecell.settings.SettingsManager
+import kotlin.math.roundToInt
 
 fun createPlaceholderView(context: Context, width: Int, height: Int): ImageView {
     val placeholder = ImageView(context)
@@ -18,4 +20,8 @@ fun findParentLayout(activity: Activity, location: CardLocation): LinearLayout {
         GameSection.FREECELL -> activity.findViewById(R.id.freeCellLayout)
         GameSection.FOUNDATION -> activity.findViewById(R.id.foundationLayout)
     }
+}
+
+ fun getBoardCardTopMargin (cardHeight: Int): Int {
+    return -(cardHeight * SettingsManager.currentSettings.cardSpacing.overlapPercentage).roundToInt()
 }

@@ -235,7 +235,7 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                 layoutParams.width = cardWidth
                 layoutParams.height = cardHeight
                 if (boardColumn.isNotEmpty()) {
-                    layoutParams.topMargin = -(cardHeight * 0.65).roundToInt()
+                    layoutParams.topMargin = getBoardCardTopMargin(cardHeight)
                 }
                 cardView.layoutParams = layoutParams
                 populateCardView(cardView, card)
