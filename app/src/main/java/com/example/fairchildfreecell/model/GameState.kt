@@ -1,5 +1,5 @@
-package com.example.fairchildfreecell
-
+package com.example.fairchildfreecell.model
+import kotlin.collections.iterator
 import kotlin.math.pow
 
 class GameState {

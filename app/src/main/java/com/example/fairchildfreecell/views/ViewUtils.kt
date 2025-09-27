@@ -1,10 +1,14 @@
-package com.example.fairchildfreecell
+package com.example.fairchildfreecell.views
 
 import android.app.Activity
 import android.content.Context
 import android.widget.ImageView
 import android.widget.LinearLayout
-import com.example.fairchildfreecell.settings.SettingsManager
+import com.example.fairchildfreecell.model.BOARD_COLUMN_IDS
+import com.example.fairchildfreecell.model.CardLocation
+import com.example.fairchildfreecell.model.GameSection
+import com.example.fairchildfreecell.R
+import com.example.fairchildfreecell.model.settings.SettingsManager
 import kotlin.math.roundToInt
 
 fun createPlaceholderView(context: Context, width: Int, height: Int): ImageView {

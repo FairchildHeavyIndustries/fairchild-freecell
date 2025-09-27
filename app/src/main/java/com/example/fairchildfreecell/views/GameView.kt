@@ -1,4 +1,4 @@
-package com.example.fairchildfreecell
+package com.example.fairchildfreecell.views
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -21,6 +21,16 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isNotEmpty
 import kotlin.math.roundToInt
 import androidx.core.view.isVisible
+import com.example.fairchildfreecell.model.BOARD_COLUMN_IDS
+import com.example.fairchildfreecell.model.Card
+import com.example.fairchildfreecell.model.CardLocation
+import com.example.fairchildfreecell.controller.GameActions
+import com.example.fairchildfreecell.model.GameSection
+import com.example.fairchildfreecell.model.GameState
+import com.example.fairchildfreecell.model.MoveEvent
+import com.example.fairchildfreecell.R
+import com.example.fairchildfreecell.model.Suit
+import com.example.fairchildfreecell.model.Value
 
 class GameView(private val activity: Activity, private val gameActions: GameActions) {
 
@@ -228,7 +238,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     location = location,
                     onSwipeDown = onCardSwipedDown,
                     onSwipeUp = onCardSwipedUp
-                ))
+                )
+                )
                 cardView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
             } else {
                 cardView.setOnClickListener(null)
@@ -277,7 +288,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     location = location,
                     onSwipeDown = onCardSwipedDown,
                     onSwipeUp = onCardSwipedUp
-                ))
+                )
+                )
                 cardView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
 
                 cardViewMap[card] = cardView

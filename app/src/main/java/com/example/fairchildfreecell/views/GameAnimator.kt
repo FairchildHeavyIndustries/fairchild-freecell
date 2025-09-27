@@ -1,4 +1,4 @@
-package com.example.fairchildfreecell
+package com.example.fairchildfreecell.views
 
 import android.app.Activity
 import android.graphics.Bitmap
@@ -6,12 +6,18 @@ import android.graphics.Canvas
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.createBitmap
 import androidx.core.view.isNotEmpty
-import com.example.fairchildfreecell.settings.SettingsManager
+import com.example.fairchildfreecell.model.Card
+import com.example.fairchildfreecell.model.GameSection
+import com.example.fairchildfreecell.model.MoveEvent
+import com.example.fairchildfreecell.R
+import com.example.fairchildfreecell.model.Value
+import com.example.fairchildfreecell.model.settings.SettingsManager
 import java.util.LinkedList
 import java.util.Queue
 import kotlin.math.roundToInt
@@ -73,7 +79,7 @@ class GameAnimator(
             // Add all the cards in the stack to the container
             moveEvent.cards.forEachIndexed { index, card ->
                 val cardView = cardViewMap[card]!!
-                (cardView.parent as? android.view.ViewGroup)?.removeView(cardView) // Detach from old parent
+                (cardView.parent as? ViewGroup)?.removeView(cardView) // Detach from old parent
                 val layoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
                 if (index > 0) {
                     layoutParams.topMargin = getBoardCardTopMargin(cardHeight)
@@ -211,7 +217,7 @@ class GameAnimator(
                     val valueUnderneath = Value.entries[movedCard.value.ordinal - 1]
                     val cardUnderneath = Card(valueUnderneath, movedCard.suit)
                     val viewUnderneath = cardViewMap[cardUnderneath]!!
-                    (viewUnderneath.parent as? android.view.ViewGroup)?.removeView(viewUnderneath)
+                    (viewUnderneath.parent as? ViewGroup)?.removeView(viewUnderneath)
                     sourceParent.addView(viewUnderneath, moveEvent.source.columnIndex)
                 }
             }
@@ -231,7 +237,7 @@ class GameAnimator(
             cardView.translationX = 0f
             cardView.translationY = 0f
 
-            (cardView.parent as? android.view.ViewGroup)?.removeView(cardView)
+            (cardView.parent as? ViewGroup)?.removeView(cardView)
 
             val newLayoutParams = LinearLayout.LayoutParams(cardWidth, cardHeight)
             if (moveEvent.destination.section == GameSection.BOARD && destParent.isNotEmpty()) {

@@ -1,4 +1,4 @@
-package com.example.fairchildfreecell
+package com.example.fairchildfreecell.model
 
 
 class Foundation {

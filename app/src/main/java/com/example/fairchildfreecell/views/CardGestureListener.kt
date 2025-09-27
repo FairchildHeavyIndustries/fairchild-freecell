@@ -1,8 +1,10 @@
-package com.example.fairchildfreecell
+package com.example.fairchildfreecell.views
 
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import com.example.fairchildfreecell.model.Card
+import com.example.fairchildfreecell.model.CardLocation
 import kotlin.math.abs
 
 internal class CardGestureListener(

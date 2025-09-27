@@ -1,4 +1,4 @@
-package com.example.fairchildfreecell.settings
+package com.example.fairchildfreecell.model.settings
 
 object SettingsManager {
     var currentSettings: UserSettings = UserSettings()
