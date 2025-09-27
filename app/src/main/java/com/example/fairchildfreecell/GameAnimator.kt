@@ -82,7 +82,7 @@ class GameAnimator(
                 stackContainer.addView(cardView)
             }
             val stackHeight =
-                (cardHeight + (moveEvent.cards.size - 1) * (cardHeight * 0.35)).toInt()
+                (cardHeight + (moveEvent.cards.size - 1) * (cardHeight * (1 - SettingsManager.currentSettings.cardSpacing.overlapPercentage))).toInt()
             stackContainer.measure(
                 View.MeasureSpec.makeMeasureSpec(cardWidth, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(stackHeight, View.MeasureSpec.EXACTLY)
@@ -169,7 +169,6 @@ class GameAnimator(
                 targetView.getLocationOnScreen(destinationCoordinates)
                 if (destParent.isNotEmpty()) {
                     // Offset to simulate stacking on top.
-//                    destinationCoordinates[1] += (targetView.height * 0.35).roundToInt()
                     destinationCoordinates[1] +=  (targetView.height * (1 - SettingsManager.currentSettings.cardSpacing.overlapPercentage)).roundToInt()
 
                 }

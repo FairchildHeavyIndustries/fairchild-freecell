@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity(), GameActions {
             gameState.moveCard(
                 clickedCard = card,
                 sourceLocation = sourceLocation,
-                quality = MoveQuality.BEST
+                moveCommand = MoveCommand.BEST
             )
         )
     }
@@ -38,7 +38,17 @@ class MainActivity : AppCompatActivity(), GameActions {
             gameState.moveCard(
                 clickedCard = card,
                 sourceLocation = sourceLocation,
-                quality = MoveQuality.SECOND_BEST
+                moveCommand = MoveCommand.BOARD
+            )
+        )
+    }
+
+    override fun onCardSwipedUp(card: Card, sourceLocation: CardLocation) {
+        handleMove(
+            gameState.moveCard(
+                clickedCard = card,
+                sourceLocation = sourceLocation,
+                moveCommand = MoveCommand.FREECELL
             )
         )
     }
@@ -48,10 +58,11 @@ class MainActivity : AppCompatActivity(), GameActions {
 
         if (undoMoveEvent != null) {
             gameView.animateMoves(
-                listOf(undoMoveEvent),
+                moves = listOf(undoMoveEvent),
                 fastDraw = false,
-                this::onCardTapped,
-                onCardSwipedDown = this::onCardSwipedDown
+                onCardTap = this::onCardTapped,
+                onCardSwipedDown = this::onCardSwipedDown,
+                onCardSwipedUp = this::onCardSwipedUp
             ) {}
         }
     }
@@ -78,10 +89,11 @@ class MainActivity : AppCompatActivity(), GameActions {
                 gameView.setBottomButtonsEnabled(false)
             }
             gameView.animateMoves(
-                allMoveEvents,
-                gameState.isGameWon,
-                this::onCardTapped,
-                onCardSwipedDown = this::onCardSwipedDown
+                moves = allMoveEvents,
+                fastDraw = gameState.isGameWon,
+                onCardTap = this::onCardTapped,
+                onCardSwipedDown = this::onCardSwipedDown,
+                onCardSwipedUp = this::onCardSwipedUp
             ) {
                 if (gameState.isGameWon) {
                     gameView.setBottomButtonsEnabled(true)
@@ -91,7 +103,12 @@ class MainActivity : AppCompatActivity(), GameActions {
     }
 
     private fun refreshGameView() {
-        gameView.drawNewGame(gameState, this::onCardTapped, this::onCardSwipedDown)
+        gameView.drawNewGame(
+            gameState = gameState,
+            onCardTap = this::onCardTapped,
+            onCardSwipedDown = this::onCardSwipedDown,
+            onCardSwipedUp = this::onCardSwipedUp
+        )
     }
 
     private fun startNewGame() {

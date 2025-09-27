@@ -107,11 +107,18 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     fun drawNewGame(
         gameState: GameState,
         onCardTap: (Card, CardLocation) -> Unit,
-        onCardSwipedDown: (Card, CardLocation) -> Unit
+        onCardSwipedDown: (Card, CardLocation) -> Unit,
+        onCardSwipedUp: (Card, CardLocation) -> Unit
     ) {
         cardViewMap.clear()
         drawTopLayouts()
-        drawBoard(gameState, cardWidth, cardHeight, onCardTap, onCardSwipedDown)
+        drawBoard(
+            gameState,
+            cardWidth,
+            cardHeight,
+            onCardTap,
+            onCardSwipedDown,
+            onCardSwipedUp)
         drawGameNumber(gameState.gameNumber)
     }
 
@@ -120,13 +127,21 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         fastDraw: Boolean = false,
         onCardTap: (Card, CardLocation) -> Unit,
         onCardSwipedDown: (Card, CardLocation) -> Unit,
+        onCardSwipedUp: (Card, CardLocation) -> Unit,
         onAllMovesComplete: () -> Unit
     ) {
         gameAnimator.animateMoves(
-            moves,
-            fastDraw,
-            { moveEvent -> updateClickListeners(moveEvent, onCardTap, onCardSwipedDown) },
-            onAllMovesComplete
+            moves = moves,
+            fastDraw = fastDraw,
+            onMoveComplete = fun(moveEvent: MoveEvent) {
+                updateClickListeners(
+                    moveEvent,
+                    onCardTap,
+                    onCardSwipedDown,
+                    onCardSwipedUp
+                )
+            },
+            onAllMovesComplete = onAllMovesComplete
         )
     }
 
@@ -193,7 +208,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
     private fun updateClickListeners(
         moveEvent: MoveEvent,
         onCardTap: (Card, CardLocation) -> Unit,
-        onCardSwipedDown: (Card, CardLocation) -> Unit
+        onCardSwipedDown: (Card, CardLocation) -> Unit,
+        onCardSwipedUp: (Card, CardLocation) -> Unit
     ) {
         moveEvent.cards.forEach { card ->
             val cardView = cardViewMap[card] ?: return@forEach
@@ -204,7 +220,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     view = cardView,
                     card = card,
                     location = location,
-                    onSwipeDown = onCardSwipedDown
+                    onSwipeDown = onCardSwipedDown,
+                    onSwipeUp = onCardSwipedUp
                 ))
                 cardView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
             } else {
@@ -219,7 +236,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
         cardWidth: Int,
         cardHeight: Int,
         onCardTap: (Card, CardLocation) -> Unit,
-        onCardSwipedDown: (Card, CardLocation) -> Unit
+        onCardSwipedDown: (Card, CardLocation) -> Unit,
+        onCardSwipedUp: (Card, CardLocation) -> Unit
     ) {
         BOARD_COLUMN_IDS.forEachIndexed { index, columnId ->
             val pileNum = index + 1
@@ -251,7 +269,8 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
                     view = cardView,
                     card = card,
                     location = location,
-                    onSwipeDown = onCardSwipedDown
+                    onSwipeDown = onCardSwipedDown,
+                    onSwipeUp = onCardSwipedUp
                 ))
                 cardView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
 

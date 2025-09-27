@@ -32,11 +32,11 @@ class GameState {
         testState.foundationPiles.values.flatten().forEach { foundation.add(it) }
     }
 
-    fun moveCard(clickedCard: Card, sourceLocation: CardLocation, quality: MoveQuality): List<MoveEvent> {
+    fun moveCard(clickedCard: Card, sourceLocation: CardLocation, moveCommand: MoveCommand): List<MoveEvent> {
         val allMoveEvents = mutableListOf<MoveEvent>()
         val stackToMove = getStackToMove(clickedCard, sourceLocation)
         if (stackToMove.isNotEmpty() && isStackValid(stackToMove)) {
-            val destination = getDestinationLocation(stackToMove, sourceLocation, quality = quality)
+            val destination = getDestinationLocation(stackToMove, source =sourceLocation, moveCommand = moveCommand)
             if (destination != null) {
                 val moveEvent = MoveEvent(stackToMove, sourceLocation, destination)
                 performMove(moveEvent)
@@ -101,7 +101,7 @@ class GameState {
         return eligibleTopCards
     }
 
-    private fun getDestinationLocation(stackToMove: List<Card>, source: CardLocation, quality: MoveQuality): CardLocation? {
+    private fun getDestinationLocation(stackToMove: List<Card>, source: CardLocation, moveCommand: MoveCommand): CardLocation? {
         val rankedMoves = mutableListOf<CardLocation>()
         if (stackToMove.size == 1) {
             findBestFoundationMove(stackToMove.first())?.let { bestFoundationMove ->
@@ -126,10 +126,10 @@ class GameState {
                 }
             }
         }
-        return when {
-            quality == MoveQuality.BEST || rankedMoves.size == 1-> rankedMoves.firstOrNull()
-            quality == MoveQuality.SECOND_BEST && rankedMoves.size > 1 -> rankedMoves.getOrNull(1)
-            else -> null
+        return when (moveCommand) {
+            MoveCommand.BEST -> rankedMoves.firstOrNull()
+            MoveCommand.FREECELL -> rankedMoves.find { it.section == GameSection.FREECELL } ?: rankedMoves.firstOrNull()
+            MoveCommand.BOARD -> rankedMoves.find { it.section == GameSection.BOARD } ?: rankedMoves.firstOrNull()
         }
     }
 

@@ -9,7 +9,8 @@ internal class CardGestureListener(
     private val view: View,
     private val card: Card,
     private val location: CardLocation,
-    private val onSwipeDown: (Card, CardLocation) -> Unit
+    private val onSwipeDown: (Card, CardLocation) -> Unit,
+    private val onSwipeUp: (Card, CardLocation) -> Unit
 ) : GestureDetector.SimpleOnGestureListener() {
 
     override fun onDown(e: MotionEvent): Boolean {
@@ -33,6 +34,9 @@ internal class CardGestureListener(
             if (abs(diffY) > abs(diffX)) {
                 if (diffY > 0) {
                     onSwipeDown(card, location)
+                    return true
+                } else {
+                    onSwipeUp(card, location)
                     return true
                 }
             }
