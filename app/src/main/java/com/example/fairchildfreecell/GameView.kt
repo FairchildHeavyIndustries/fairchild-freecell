@@ -144,7 +144,13 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             onAllMovesComplete = onAllMovesComplete
         )
     }
-
+    fun updateSaveGameButton(isSaved: Boolean) {
+        if (isSaved) {
+            saveGameButton.setImageResource(R.drawable.ic_star_filled)
+        } else {
+            saveGameButton.setImageResource(R.drawable.ic_star)
+        }
+    }
 
     private fun hideSystemUI() {
         WindowCompat.setDecorFitsSystemWindows(activity.window, false)
@@ -298,4 +304,6 @@ class GameView(private val activity: Activity, private val gameActions: GameActi
             Suit.SPADES -> "♠"
         }
     }
+
+
 }

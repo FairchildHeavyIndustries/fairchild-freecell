@@ -133,7 +133,7 @@
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/new_game"
-            android:src="@drawable/ic_add2"
+            android:src="@drawable/ic_add"
             app:tint="#FFFFFF" />
 
         <ImageButton

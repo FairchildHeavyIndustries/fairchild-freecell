@@ -2,6 +2,7 @@ package com.example.fairchildfreecell
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.example.fairchildfreecell.datastore.SavedGameManager
 
 class MainActivity : AppCompatActivity(), GameActions {
     private var currentGameNumber = 0
@@ -11,9 +12,11 @@ class MainActivity : AppCompatActivity(), GameActions {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        gameView = GameView(this, this)
+        gameView = GameView(activity = this, gameActions = this)
+        SavedGameManager.init(context = this) //
         startNewGame()
     }
+
 
     override fun onRestartClicked() {
         restartCurrentGame()
@@ -80,7 +83,8 @@ class MainActivity : AppCompatActivity(), GameActions {
     }
 
     override fun onSaveGameTapped() {
-        // TODO: Implement save game functionality
+        SavedGameManager.toggleSaveGame(currentGameNumber)
+        gameView.updateSaveGameButton(isSaved = SavedGameManager.isGameSaved(currentGameNumber))
     }
 
     private fun handleMove(allMoveEvents: List<MoveEvent>) {
@@ -113,7 +117,7 @@ class MainActivity : AppCompatActivity(), GameActions {
 
     private fun startNewGame() {
         currentGameNumber = (1..32000).random()
-//        currentGameNumber = 77777
+//        currentGameNumber = 1115
         restartCurrentGame()
     }
 
@@ -125,5 +129,6 @@ class MainActivity : AppCompatActivity(), GameActions {
         }
         refreshGameView()
         gameView.setBottomButtonsEnabled(true)
+        gameView.updateSaveGameButton(isSaved = SavedGameManager.isGameSaved(currentGameNumber))
     }
 }
