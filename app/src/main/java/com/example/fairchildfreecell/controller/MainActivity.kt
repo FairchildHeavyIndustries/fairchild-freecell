@@ -1,8 +1,16 @@
-package com.example.fairchildfreecell
+package com.example.fairchildfreecell.controller
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.example.fairchildfreecell.datastore.SavedGameManager
+import com.example.fairchildfreecell.R
+import com.example.fairchildfreecell.views.GameView
+import com.example.fairchildfreecell.model.settings.SavedGameManager
+import com.example.fairchildfreecell.model.Card
+import com.example.fairchildfreecell.model.CardLocation
+import com.example.fairchildfreecell.model.GameState
+import com.example.fairchildfreecell.model.MoveCommand
+import com.example.fairchildfreecell.model.MoveEvent
+import com.example.fairchildfreecell.model.TestGameStates
 
 class MainActivity : AppCompatActivity(), GameActions {
     private var currentGameNumber = 0

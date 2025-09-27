@@ -1,4 +1,7 @@
-package com.example.fairchildfreecell
+package com.example.fairchildfreecell.controller
+
+import com.example.fairchildfreecell.model.Card
+import com.example.fairchildfreecell.model.CardLocation
 
 interface GameActions {
     fun onCardTapped(card: Card, sourceLocation: CardLocation)

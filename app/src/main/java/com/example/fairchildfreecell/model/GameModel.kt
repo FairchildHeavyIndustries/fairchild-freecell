@@ -1,4 +1,6 @@
-package com.example.fairchildfreecell
+package com.example.fairchildfreecell.model
+
+import com.example.fairchildfreecell.R
 
 enum class GameSection {
     BOARD, FOUNDATION, FREECELL

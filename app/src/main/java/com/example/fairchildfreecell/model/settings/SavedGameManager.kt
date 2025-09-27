@@ -1,4 +1,4 @@
-package com.example.fairchildfreecell.datastore
+package com.example.fairchildfreecell.model.settings
 
 import android.content.Context
 import android.content.SharedPreferences

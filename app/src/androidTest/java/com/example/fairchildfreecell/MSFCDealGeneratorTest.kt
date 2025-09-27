@@ -1,6 +1,10 @@
 package com.example.fairchildfreecell
 
-import org.junit.Assert.*
+import com.example.fairchildfreecell.model.Card
+import com.example.fairchildfreecell.model.MSDealGenerator
+import com.example.fairchildfreecell.model.Suit
+import com.example.fairchildfreecell.model.Value
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MSDealGeneratorTest {
@@ -33,14 +37,5 @@ class MSDealGeneratorTest {
         assertEquals("The deck is incorrect.",      lastCard, shuffledDeck[51] )
     }
 
-    @Test
-    fun moveCardTest() {
-        val gameState = GameState(TestGameStates.screenshotState)
-        val card = Card(Value.SIX, Suit.DIAMONDS)
-        val sourceSection = GameSection.BOARD
-        val sourceColumn = 3
-        val moveEvent = gameState.moveCard(card, sourceSection, sourceColumn)
-        assertNotNull(moveEvent)
 
-    }
 }

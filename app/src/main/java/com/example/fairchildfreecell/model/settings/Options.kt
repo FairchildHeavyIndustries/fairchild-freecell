@@ -1,4 +1,4 @@
-package com.example.fairchildfreecell.settings
+package com.example.fairchildfreecell.model.settings
 
 enum class CardSpacing(val overlapPercentage: Double) {
     NORMAL(0.575),
